@@ -14,7 +14,11 @@ const createContext = async (req: NextRequest) => {
     headers: req.headers,
   });
 };
-
+/**
+ * This is the actual tRPC handler that will handle all incoming requests to the tRPC API.
+ *
+ * @see https://trpc.io/docs/server/nextjs
+ */
 const handler = (req: NextRequest) =>
   fetchRequestHandler({
     endpoint: "/api/trpc",

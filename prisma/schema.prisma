@@ -1,0 +1,211 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Theme {
+  LIGHT
+  DARK
+  SYSTEM
+}
+
+enum GenerationStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum AIProviderType {
+  OPENAI
+  GEMINI
+  ANTHROPIC
+}
+
+enum Language {
+  FR
+  EN
+}
+
+enum VoiceType {
+  FREE
+  PREMIUM
+}
+
+enum VoiceProviderType {
+  MICROSOFT
+  GOOGLE
+  OPENAI
+  ELEVENLABS
+  MINIMAX
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum StorageProviderType {
+  LOCAL
+  S3
+  R2
+  SUPABASE
+}
+
+model User {
+  id    String  @id
+  name  String
+  email String  @unique
+  image String?
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  status        UserStatus    @default(ACTIVE)
+  projects      Project[]
+  settings      UserSettings?
+  emailVerified Boolean       @default(false)
+  sessions      Session[]
+  accounts      Account[]
+
+  @@map("user")
+}
+
+model UserSettings {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  theme     Theme    @default(SYSTEM)
+  language  Language @default(FR)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("user_settings")
+}
+
+model Project {
+  id          String     @id @default(cuid())
+  name        String
+  description String?
+  isFavorite  Boolean    @default(false)
+  isArchived  Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  deletedAt   DateTime?
+  userId      String
+  documents   Document[]
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name])
+  @@index([userId])
+  @@map("project")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+model Document {
+  id        String    @id @default(cuid())
+  title     String
+  content   String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id])
+
+  generations Generation[]
+
+  @@map("document")
+}
+
+model Generation {
+
+  id          String @id @default(cuid())
+  prompt      String
+  result      String?
+  provider    AIProviderType
+  status      GenerationStatus
+  voiceId     String?
+  voice       Voice? @relation(fields: [voiceId], references: [id])
+  audioUrl    String?
+  duration    Int?
+  title       String
+  progress    Int @default(0)
+  currentStep String?
+  transcript  String?
+  error       String?
+  documentId  String
+  document    Document @relation(fields: [documentId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+  
+}
+
+model Voice {
+
+  id              String @id @default(cuid())
+  name            String
+  provider        VoiceProviderType
+  providerVoiceId String
+  type            VoiceType
+  language        String
+  gender          String?
+  description     String?
+  isActive        Boolean @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
+  generations     Generation[]
+}
