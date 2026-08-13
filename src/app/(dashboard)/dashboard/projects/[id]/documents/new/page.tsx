@@ -474,7 +474,7 @@ export default function NewDocumentPage() {
                 "
               >
                 <Link
-                  href={`/dashboard/projects/${project.id}/document`}
+                  href={`/dashboard/projects/${project.id}`}
                 >
                   Annuler
                 </Link>

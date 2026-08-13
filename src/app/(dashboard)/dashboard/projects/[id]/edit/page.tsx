@@ -24,7 +24,6 @@ import {
 } from "@/components/ui/form";
 
 import { api } from "@/trpc/react";
-import { Projects } from "openai/resources/admin/organization/projects/projects.mjs";
 
 type ProjectFormValues = {
   name: string;
@@ -100,7 +99,7 @@ export default function EditProjectPage() {
         description:
           values.description.trim(),
       });
-      router.push(`/dashboard/projects/${projectId}/doc`);
+      router.push(`/dashboard/projects/${projectId}/documents`);
     } catch (error) {
       console.error(
         "Erreur lors de la modification du projet :",
@@ -522,7 +521,7 @@ export default function EditProjectPage() {
                   dark:hover:text-slate-100
                 "
               >
-                <Link href="/dashboard/projects">
+                <Link href={`/dashboard/projects/${projectId}/documents`}>
                   Annuler
                 </Link>
               </Button>

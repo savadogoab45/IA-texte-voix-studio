@@ -81,11 +81,13 @@ export function MobileSidebar({
           border-slate-200
           bg-white
           shadow-xl
+          dark:border-[#1e3354]
+          dark:bg-[#0b1830]
           lg:hidden
         "
       >
         {/* Header */}
-        <div className="flex h-16 items-center justify-between border-b border-slate-200 px-4">
+        <div className="flex h-16 items-center justify-between border-b border-slate-200 px-4 dark:border-[#1e3354]">
           <Link
             href="/dashboard"
             onClick={onClose}
@@ -108,11 +110,11 @@ export function MobileSidebar({
             </div>
 
             <div>
-              <p className="text-sm font-bold text-slate-900">
+              <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
                 AI Text Audio
               </p>
 
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 SaaS
               </p>
             </div>
@@ -129,6 +131,9 @@ export function MobileSidebar({
               transition-colors
               hover:bg-slate-100
               hover:text-slate-900
+              dark:text-slate-400
+              dark:hover:bg-[#10213d]
+              dark:hover:text-slate-100
             "
           >
             <X className="size-5" />
@@ -137,7 +142,7 @@ export function MobileSidebar({
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto px-3 py-5">
-          <p className="mb-3 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+          <p className="mb-3 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
             Principal
           </p>
 
@@ -158,8 +163,8 @@ export function MobileSidebar({
                   className={cn(
                     "flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors",
                     isActive
-                      ? "bg-sky-50 text-sky-700"
-                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
+                      ? "bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300"
+                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-[#10213d] dark:hover:text-slate-100",
                   )}
                 >
                   <Icon className="size-[18px]" />
@@ -172,7 +177,7 @@ export function MobileSidebar({
         </nav>
 
         {/* User */}
-        <div className="border-t border-slate-200 p-3">
+        <div className="border-t border-slate-200 p-3 dark:border-[#1e3354]">
           <SidebarUser />
         </div>
       </aside>

@@ -340,7 +340,7 @@ export default function ProjectsPage() {
                 "
               >
                 <Link
-                  href={`/dashboard/projects/${project.id}/doc`}
+                  href={`/dashboard/projects/${project.id}/documents`}
                   className="flex min-w-0 flex-1 items-start gap-3"
                 >
                   <div
@@ -390,7 +390,7 @@ export default function ProjectsPage() {
               </div>
 
               <Link
-                href={`/dashboard/projects/${project.id}/document`}
+                href={`/dashboard/projects/${project.id}/documents`}
                 className="mt-5 block"
               >
                 <h3

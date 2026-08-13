@@ -32,6 +32,9 @@ export const buttonVariants = cva(
         danger: "bg-red-600 text-white hover:bg-red-700",
 
         link: "bg-transparent underline underline-offset-4 hover:text-blue-600",
+
+        success: "bg-green-600 hover:text-green-700 hover:bg-green-700",
+        générate: "bg-sky-600 text-white hover:bg-sky-700",
       },
 
       size: {
