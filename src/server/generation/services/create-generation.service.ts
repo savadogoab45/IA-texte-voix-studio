@@ -61,23 +61,31 @@ export class CreateGenerationService {
     }
 
     // Création de la génération
-    const generation = await this.generationRepository.create({
-      title: data.title,
-      prompt: data.prompt,
-      provider: data.provider,
+   const generation =
+  await this.generationRepository.create({
+    title: data.title,
+    prompt: data.prompt,
 
-      status: GenerationStatus.PENDING,
-      document: {
-        connect: {
-          id: data.documentId,
-        },
+    providerAi: null,
+
+    providerVoice:
+      data.providerVoice,
+
+    status:
+      GenerationStatus.PENDING,
+
+    voice: {
+      connect: {
+        id: data.voiceId,
       },
-      voice: {
-        connect: {
-          id: data.voiceId,
-        },
+    },
+
+    document: {
+      connect: {
+        id: data.documentId,
       },
-    });
+    },
+  });
 
     // Ajout du job dans BullMQ
     await this.generationQueueService.dispatchGeneration(generation.id);

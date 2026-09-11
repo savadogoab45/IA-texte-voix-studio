@@ -365,7 +365,6 @@ export default function SettingsPage() {
                 justify-center
                 rounded-xl
                 bg-sky-50
-
                 dark:bg-sky-950/50
               "
             >
@@ -406,7 +405,6 @@ export default function SettingsPage() {
               mt-6
               divide-y
               divide-slate-100
-
               dark:divide-[#1e3354]
             "
           >
@@ -443,7 +441,6 @@ export default function SettingsPage() {
           bg-white
           p-4
           shadow-sm
-
           dark:border-[#1e3354]
           dark:bg-[#0b1830]
           dark:shadow-lg
@@ -509,7 +506,6 @@ function ThemeCard({
         p-4
         text-left
         transition-all
-
         ${
           active
             ? `
@@ -517,7 +513,6 @@ function ThemeCard({
               bg-sky-50
               shadow-sm
               shadow-sky-500/10
-
               dark:border-sky-600
               dark:bg-sky-950/40
               dark:shadow-sky-950/20
@@ -527,7 +522,6 @@ function ThemeCard({
               bg-white
               hover:border-sky-200
               hover:bg-slate-50
-
               dark:border-[#1e3354]
               dark:bg-[#071a33]
               dark:hover:border-sky-800
@@ -550,14 +544,12 @@ function ThemeCard({
               ? `
                 bg-sky-100
                 text-sky-600
-
                 dark:bg-sky-900/60
                 dark:text-sky-400
               `
               : `
                 bg-slate-100
                 text-slate-500
-
                 dark:bg-[#10213d]
                 dark:text-slate-400
               `
@@ -601,7 +593,7 @@ function ThemeCard({
             flex
             size-5
             items-center
-            justify-center
+            justify-center  x
             rounded-full
             bg-sky-500
             text-white
@@ -676,7 +668,6 @@ function SettingToggle({
           shrink-0
           rounded-full
           transition-colors
-
           ${
             checked
               ? "bg-sky-500"
@@ -696,7 +687,6 @@ function SettingToggle({
             bg-white
             shadow-sm
             transition-transform
-
             ${
               checked
                 ? "translate-x-[5px]"

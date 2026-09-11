@@ -99,7 +99,7 @@ export default function EditProjectPage() {
         description:
           values.description.trim(),
       });
-      router.push(`/dashboard/projects/${projectId}/documents`);
+      router.push(`/dashboard/projects/${projectId}`);
     } catch (error) {
       console.error(
         "Erreur lors de la modification du projet :",
@@ -521,7 +521,7 @@ export default function EditProjectPage() {
                   dark:hover:text-slate-100
                 "
               >
-                <Link href={`/dashboard/projects/${projectId}/documents`}>
+                <Link href={`/dashboard/projects/${projectId}`}>
                   Annuler
                 </Link>
               </Button>

@@ -80,7 +80,9 @@ export async function POST(request: Request) {
 
                 prompt: prompt.trim(),
 
-                provider: "OPENAI",
+                providerAi: "OPENAI",
+
+                providerVoice: "OPENAI",
 
                 status: "PENDING",
 

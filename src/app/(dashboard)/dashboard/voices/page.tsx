@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   AudioLines,
   Check,
+  ChevronDown,
   Heart,
   Play,
   Search,
@@ -14,91 +15,233 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-type Voice = {
-  id: string;
-  name: string;
-  language: string;
-  languageCode: string;
-  gender: "Femme" | "Homme";
-  description: string;
-  favorite: boolean;
+import { api } from "@/trpc/react";
+
+/* =========================================================
+   PROVIDERS
+   ========================================================= */
+
+const providerLabels: Record<string, string> = {
+  PIPER: "Piper",
+  EDGE_TTS: "Edge TTS",
+  GOOGLE: "Google Cloud",
+  ELEVENLABS: "ElevenLabs",
+  OPENAI: "OpenAI",
+  MINIMAX: "MiniMax",
+  MICROSOFT: "Microsoft",
 };
 
-const voices: Voice[] = [
-  {
-    id: "voice-1",
-    name: "Sophie",
-    language: "Français",
-    languageCode: "FR",
-    gender: "Femme",
-    description: "Voix naturelle et chaleureuse.",
-    favorite: false,
-  },
-  {
-    id: "voice-2",
-    name: "Thomas",
-    language: "Français",
-    languageCode: "FR",
-    gender: "Homme",
-    description: "Voix claire adaptée à la narration.",
-    favorite: true,
-  },
-  {
-    id: "voice-3",
-    name: "Emma",
-    language: "Anglais",
-    languageCode: "EN",
-    gender: "Femme",
-    description: "Voix douce et naturelle.",
-    favorite: false,
-  },
-  {
-    id: "voice-4",
-    name: "James",
-    language: "Anglais",
-    languageCode: "EN",
-    gender: "Homme",
-    description: "Voix professionnelle pour les contenus audio.",
-    favorite: false,
-  },
-  {
-    id: "voice-5",
-    name: "Amina",
-    language: "Français",
-    languageCode: "FR",
-    gender: "Femme",
-    description: "Voix expressive adaptée aux histoires.",
-    favorite: true,
-  },
-  {
-    id: "voice-6",
-    name: "Lucas",
-    language: "Espagnol",
-    languageCode: "ES",
-    gender: "Homme",
-    description: "Voix dynamique et expressive.",
-    favorite: false,
-  },
+const providerOrder = [
+  "PIPER",
+  "EDGE_TTS",
+  "GOOGLE",
+  "ELEVENLABS",
+  "OPENAI",
+  "MINIMAX",
+  "MICROSOFT",
 ];
 
+/* =========================================================
+   HELPERS
+   ========================================================= */
+
+function getProviderLabel(provider: string) {
+  return providerLabels[provider] ?? provider;
+}
+
+function getLanguageLabel(language: string) {
+  const labels: Record<string, string> = {
+    "fr-FR": "Français",
+    fr: "Français",
+
+    "en-US": "Anglais",
+    "en-GB": "Anglais",
+    en: "Anglais",
+
+    "es-ES": "Espagnol",
+    es: "Espagnol",
+
+    "de-DE": "Allemand",
+    de: "Allemand",
+
+    "it-IT": "Italien",
+    it: "Italien",
+
+    "pt-BR": "Portugais",
+    pt: "Portugais",
+
+    "ar-SA": "Arabe",
+    ar: "Arabe",
+  };
+
+  return labels[language] ?? language;
+}
+
+function normalizeGender(gender: string | null) {
+  if (!gender) {
+    return "Non précisé";
+  }
+
+  const value = gender.toLowerCase();
+
+  if (
+    value === "female" ||
+    value === "femme" ||
+    value === "female_voice"
+  ) {
+    return "Femme";
+  }
+
+  if (
+    value === "male" ||
+    value === "homme" ||
+    value === "male_voice"
+  ) {
+    return "Homme";
+  }
+
+  return gender;
+}
+
+/* =========================================================
+   PAGE
+   ========================================================= */
+
 export default function VoicesPage() {
+  /* =======================================================
+     FILTERS
+     ======================================================= */
+
   const [search, setSearch] = useState("");
-  const [language, setLanguage] = useState("Toutes");
-  const [gender, setGender] = useState("Tous");
-  const [favoritesOnly, setFavoritesOnly] = useState(false);
-  const [selectedVoice, setSelectedVoice] = useState<string | null>(
-    null,
-  );
+
+  const [language, setLanguage] =
+    useState("Toutes");
+
+  const [gender, setGender] =
+    useState("Tous");
+
+  const [provider, setProvider] =
+    useState("Tous");
+
+  const [type, setType] =
+    useState("Tous");
+
+  const [favoritesOnly, setFavoritesOnly] =
+    useState(false);
+
+  /* =======================================================
+     VOICE STATE
+     ======================================================= */
+
+  const [selectedVoice, setSelectedVoice] =
+    useState<string | null>(null);
+
+  const [playingVoiceId, setPlayingVoiceId] =
+    useState<string | null>(null);
+
+  const [previewError, setPreviewError] =
+    useState<string | null>(null);
+
+  const [favorites, setFavorites] =
+    useState<Set<string>>(new Set());
+
+  /* =======================================================
+     DATABASE
+     ======================================================= */
+
+  const voicesQuery =
+    api.voice.getAll.useQuery();
+
+  const voices = voicesQuery.data ?? [];
+
+  /* =======================================================
+     LANGUAGES
+     ======================================================= */
+
+  const languages = useMemo(() => {
+    const unique = new Set(
+      voices.map(
+        (voice) => voice.language,
+      ),
+    );
+
+    return Array.from(unique).sort(
+      (a, b) =>
+        getLanguageLabel(a).localeCompare(
+          getLanguageLabel(b),
+          "fr",
+        ),
+    );
+  }, [voices]);
+
+  /* =======================================================
+     PROVIDERS
+     ======================================================= */
+
+  const providers = useMemo(() => {
+    const unique = new Set(
+      voices.map(
+        (voice) => voice.provider,
+      ),
+    );
+
+    return Array.from(unique).sort(
+      (a, b) => {
+        const indexA =
+          providerOrder.indexOf(a);
+
+        const indexB =
+          providerOrder.indexOf(b);
+
+        if (
+          indexA === -1 &&
+          indexB === -1
+        ) {
+          return a.localeCompare(b);
+        }
+
+        if (indexA === -1) {
+          return 1;
+        }
+
+        if (indexB === -1) {
+          return -1;
+        }
+
+        return indexA - indexB;
+      },
+    );
+  }, [voices]);
+
+  /* =======================================================
+     FILTERED VOICES
+     ======================================================= */
 
   const filteredVoices = useMemo(() => {
-    const value = search.toLowerCase().trim();
+    const value =
+      search.toLowerCase().trim();
 
     return voices.filter((voice) => {
+      const description =
+        voice.description ?? "";
+
       const matchesSearch =
         !value ||
-        voice.name.toLowerCase().includes(value) ||
-        voice.language.toLowerCase().includes(value) ||
-        voice.description.toLowerCase().includes(value);
+        voice.name
+          .toLowerCase()
+          .includes(value) ||
+        voice.language
+          .toLowerCase()
+          .includes(value) ||
+        voice.provider
+          .toLowerCase()
+          .includes(value) ||
+        voice.providerVoiceId
+          .toLowerCase()
+          .includes(value) ||
+        description
+          .toLowerCase()
+          .includes(value);
 
       const matchesLanguage =
         language === "Toutes" ||
@@ -106,19 +249,384 @@ export default function VoicesPage() {
 
       const matchesGender =
         gender === "Tous" ||
-        voice.gender === gender;
+        normalizeGender(
+          voice.gender,
+        ) === gender;
+
+      const matchesProvider =
+        provider === "Tous" ||
+        voice.provider === provider;
+
+      const matchesType =
+        type === "Tous" ||
+        voice.type === type;
 
       const matchesFavorites =
-        !favoritesOnly || voice.favorite;
+        !favoritesOnly ||
+        favorites.has(voice.id);
 
       return (
         matchesSearch &&
         matchesLanguage &&
         matchesGender &&
+        matchesProvider &&
+        matchesType &&
         matchesFavorites
       );
     });
-  }, [search, language, gender, favoritesOnly]);
+  }, [
+    voices,
+    search,
+    language,
+    gender,
+    provider,
+    type,
+    favoritesOnly,
+    favorites,
+  ]);
+
+  /* =======================================================
+     GROUP BY PROVIDER
+     ======================================================= */
+
+  const groupedVoices = useMemo(() => {
+    const groups = new Map<
+      string,
+      typeof filteredVoices
+    >();
+
+    for (const voice of filteredVoices) {
+      const current =
+        groups.get(voice.provider);
+
+      if (current) {
+        current.push(voice);
+      } else {
+        groups.set(voice.provider, [
+          voice,
+        ]);
+      }
+    }
+
+    return Array.from(
+      groups.entries(),
+    ).sort(
+      ([providerA], [providerB]) => {
+        const indexA =
+          providerOrder.indexOf(
+            providerA,
+          );
+
+        const indexB =
+          providerOrder.indexOf(
+            providerB,
+          );
+
+        if (
+          indexA === -1 &&
+          indexB === -1
+        ) {
+          return providerA.localeCompare(
+            providerB,
+          );
+        }
+
+        if (indexA === -1) {
+          return 1;
+        }
+
+        if (indexB === -1) {
+          return -1;
+        }
+
+        return indexA - indexB;
+      },
+    );
+  }, [filteredVoices]);
+
+  /* =======================================================
+     FAVORITES
+     ======================================================= */
+
+  function toggleFavorite(id: string) {
+    setFavorites((current) => {
+      const next = new Set(current);
+
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+
+      return next;
+    });
+  }
+
+  /* =======================================================
+     PREVIEW AUDIO
+     ======================================================= */
+
+  async function handlePreviewVoice(
+    voiceId: string,
+  ) {
+    if (playingVoiceId) {
+      return;
+    }
+
+    try {
+      setPreviewError(null);
+      setPlayingVoiceId(voiceId);
+
+      const response = await fetch(
+        "/api/voices/preview",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+
+          body: JSON.stringify({
+            voiceId,
+
+            text:
+              "Bonjour, ceci est un aperçu de cette voix. Vous pouvez écouter sa qualité avant de l'utiliser pour votre génération audio.",
+          }),
+        },
+      );
+
+      if (!response.ok) {
+        let message =
+          "Impossible de générer l'aperçu audio.";
+
+        try {
+          const data =
+            await response.json();
+
+          if (
+            typeof data?.error ===
+            "string"
+          ) {
+            message = data.error;
+          }
+        } catch {
+          // La réponse n'est pas forcément du JSON.
+        }
+
+        throw new Error(message);
+      }
+
+      const blob =
+        await response.blob();
+
+      if (!blob.size) {
+        throw new Error(
+          "Le fichier audio généré est vide.",
+        );
+      }
+
+      const url =
+        URL.createObjectURL(blob);
+
+      const audio =
+        new Audio(url);
+
+      audio.onended = () => {
+        URL.revokeObjectURL(url);
+        setPlayingVoiceId(null);
+      };
+
+      audio.onerror = () => {
+        URL.revokeObjectURL(url);
+        setPlayingVoiceId(null);
+
+        setPreviewError(
+          "Impossible de lire l'audio généré.",
+        );
+      };
+
+      await audio.play();
+    } catch (error) {
+      console.error(
+        "❌ Erreur preview audio:",
+        error,
+      );
+
+      setPlayingVoiceId(null);
+
+      setPreviewError(
+        error instanceof Error
+          ? error.message
+          : "Erreur pendant la lecture.",
+      );
+    }
+  }
+
+  /* =======================================================
+     RESET
+     ======================================================= */
+
+  function resetFilters() {
+    setSearch("");
+    setLanguage("Toutes");
+    setGender("Tous");
+    setProvider("Tous");
+    setType("Tous");
+    setFavoritesOnly(false);
+  }
+
+  /* =======================================================
+     CLEANUP
+     ======================================================= */
+
+  useEffect(() => {
+    return () => {
+      setPlayingVoiceId(null);
+    };
+  }, []);
+
+  /* =======================================================
+     LOADING
+     ======================================================= */
+
+  if (voicesQuery.isLoading) {
+    return (
+      <div
+        className="
+          relative
+          mx-auto
+          flex
+          min-h-[500px]
+          w-full
+          max-w-7xl
+          items-center
+          justify-center
+        "
+      >
+        <div
+          className="
+            flex
+            items-center
+            gap-3
+            text-sm
+            text-slate-500
+            dark:text-slate-400
+          "
+        >
+          <span
+            className="
+              size-5
+              animate-spin
+              rounded-full
+              border-2
+              border-slate-300
+              border-t-sky-500
+
+              dark:border-slate-700
+              dark:border-t-sky-400
+            "
+          />
+
+          Chargement des voix...
+        </div>
+      </div>
+    );
+  }
+
+  /* =======================================================
+     ERROR
+     ======================================================= */
+
+  if (voicesQuery.isError) {
+    return (
+      <div
+        className="
+          mx-auto
+          flex
+          min-h-[500px]
+          w-full
+          max-w-3xl
+          flex-col
+          items-center
+          justify-center
+          rounded-2xl
+          border
+          border-red-200
+          bg-red-50
+          px-6
+          text-center
+
+          dark:border-red-900/50
+          dark:bg-red-950/20
+        "
+      >
+        <div
+          className="
+            flex
+            size-14
+            items-center
+            justify-center
+            rounded-2xl
+            bg-red-100
+
+            dark:bg-red-950/40
+          "
+        >
+          <AudioLines
+            className="
+              size-7
+              text-red-600
+              dark:text-red-400
+            "
+          />
+        </div>
+
+        <h3
+          className="
+            mt-5
+            text-lg
+            font-semibold
+            text-red-800
+
+            dark:text-red-300
+          "
+        >
+          Impossible de charger les voix
+        </h3>
+
+        <p
+          className="
+            mt-2
+            max-w-md
+            text-sm
+            leading-6
+            text-red-600
+
+            dark:text-red-400
+          "
+        >
+          Une erreur est survenue pendant
+          la récupération des voix depuis
+          la base de données.
+        </p>
+
+        <Button
+          type="button"
+          onClick={() =>
+            voicesQuery.refetch()
+          }
+          className="mt-5 rounded-xl"
+        >
+          Réessayer
+        </Button>
+      </div>
+    );
+  }
+
+  /* =======================================================
+     PAGE
+     ======================================================= */
 
   return (
     <div
@@ -131,9 +639,10 @@ export default function VoicesPage() {
         dark:text-slate-100
       "
     >
-      {/* =========================================
+      {/* ===================================================
           HEADER
-          ========================================= */}
+          =================================================== */}
+
       <div>
         <h2
           className="
@@ -141,7 +650,9 @@ export default function VoicesPage() {
             font-bold
             tracking-tight
             text-slate-900
+
             dark:text-slate-100
+
             sm:text-3xl
           "
         >
@@ -153,17 +664,21 @@ export default function VoicesPage() {
             mt-1
             text-sm
             text-slate-500
+
             dark:text-slate-400
+
             sm:text-base
           "
         >
-          Choisissez une voix naturelle pour vos générations audio.
+          Choisissez une voix naturelle
+          pour vos générations audio.
         </p>
       </div>
 
-      {/* =========================================
+      {/* ===================================================
           SEARCH
-          ========================================= */}
+          =================================================== */}
+
       <div className="mt-6">
         <div className="relative max-w-xl">
           <Search
@@ -174,6 +689,7 @@ export default function VoicesPage() {
               size-4
               -translate-y-1/2
               text-slate-400
+
               dark:text-slate-500
             "
           />
@@ -181,7 +697,9 @@ export default function VoicesPage() {
           <Input
             value={search}
             onChange={(event) =>
-              setSearch(event.target.value)
+              setSearch(
+                event.target.value,
+              )
             }
             placeholder="Rechercher une voix..."
             className="
@@ -193,6 +711,7 @@ export default function VoicesPage() {
               text-slate-900
               shadow-sm
               placeholder:text-slate-400
+
               focus-visible:border-sky-500
               focus-visible:ring-sky-500/20
 
@@ -200,123 +719,344 @@ export default function VoicesPage() {
               dark:bg-[#0b1830]
               dark:text-slate-100
               dark:placeholder:text-slate-500
-              dark:focus-visible:border-sky-500
-              dark:focus-visible:ring-sky-500/20
             "
           />
         </div>
       </div>
 
-      {/* =========================================
-          FILTERS
-          ========================================= */}
-      <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-        {/* Language */}
-        <div className="flex gap-2 overflow-x-auto">
-          {[
-            "Toutes",
-            "Français",
-            "Anglais",
-            "Espagnol",
-          ].map((item) => {
-            const isActive = language === item;
+      {/* ===================================================
+          PROVIDER FILTER
+          =================================================== */}
 
-            return (
-              <Button
-                key={item}
-                type="button"
-                variant={isActive ? "secondary" : "ghost"}
-                onClick={() => setLanguage(item)}
-                className={`
-                  shrink-0
-                  rounded-lg
+      {providers.length > 0 && (
+        <div className="mt-6">
+          <div
+            className="
+              mb-2
+              text-xs
+              font-semibold
+              uppercase
+              tracking-wide
+              text-slate-400
 
-                  ${
-                    isActive
-                      ? `
-                        bg-sky-50
-                        text-sky-700
-                        hover:bg-sky-100
-                        hover:text-sky-700
+              dark:text-slate-500
+            "
+          >
+            Fournisseur
+          </div>
 
-                        dark:bg-sky-950/50
-                        dark:text-sky-400
-                        dark:hover:bg-sky-900/60
-                        dark:hover:text-sky-300
-                      `
-                      : `
-                        text-slate-600
-                        hover:bg-slate-100
-                        hover:text-slate-900
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            <Button
+              type="button"
+              variant={
+                provider === "Tous"
+                  ? "secondary"
+                  : "ghost"
+              }
+              onClick={() =>
+                setProvider("Tous")
+              }
+              className={`
+                shrink-0
+                rounded-lg
 
-                        dark:text-slate-400
-                        dark:hover:bg-[#10213d]
-                        dark:hover:text-slate-100
-                      `
+                ${
+                  provider === "Tous"
+                    ? `
+                      bg-sky-50
+                      text-sky-700
+                      hover:bg-sky-100
+
+                      dark:bg-sky-950/50
+                      dark:text-sky-400
+                    `
+                    : `
+                      text-slate-600
+                      hover:bg-slate-100
+
+                      dark:text-slate-400
+                      dark:hover:bg-[#10213d]
+                    `
+                }
+              `}
+            >
+              Tous
+            </Button>
+
+            {providers.map((item) => {
+              const active =
+                provider === item;
+
+              return (
+                <Button
+                  key={item}
+                  type="button"
+                  variant={
+                    active
+                      ? "secondary"
+                      : "ghost"
                   }
-                `}
-              >
-                {item}
-              </Button>
-            );
-          })}
-        </div>
+                  onClick={() =>
+                    setProvider(item)
+                  }
+                  className={`
+                    shrink-0
+                    rounded-lg
 
+                    ${
+                      active
+                        ? `
+                          bg-sky-50
+                          text-sky-700
+
+                          dark:bg-sky-950/50
+                          dark:text-sky-400
+                        `
+                        : `
+                          text-slate-600
+                          hover:bg-slate-100
+
+                          dark:text-slate-400
+                          dark:hover:bg-[#10213d]
+                        `
+                    }
+                  `}
+                >
+                  {getProviderLabel(item)}
+                </Button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ===================================================
+          LANGUAGE FILTER
+          =================================================== */}
+
+      {languages.length > 0 && (
+        <div className="mt-5">
+          <div
+            className="
+              mb-2
+              text-xs
+              font-semibold
+              uppercase
+              tracking-wide
+              text-slate-400
+
+              dark:text-slate-500
+            "
+          >
+            Langue
+          </div>
+
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            <Button
+              type="button"
+              variant={
+                language === "Toutes"
+                  ? "secondary"
+                  : "ghost"
+              }
+              onClick={() =>
+                setLanguage("Toutes")
+              }
+              className={`
+                shrink-0
+                rounded-lg
+
+                ${
+                  language === "Toutes"
+                    ? `
+                      bg-sky-50
+                      text-sky-700
+
+                      dark:bg-sky-950/50
+                      dark:text-sky-400
+                    `
+                    : `
+                      text-slate-600
+                      hover:bg-slate-100
+
+                      dark:text-slate-400
+                      dark:hover:bg-[#10213d]
+                    `
+                }
+              `}
+            >
+              Toutes
+            </Button>
+
+            {languages.map((item) => {
+              const active =
+                language === item;
+
+              return (
+                <Button
+                  key={item}
+                  type="button"
+                  variant={
+                    active
+                      ? "secondary"
+                      : "ghost"
+                  }
+                  onClick={() =>
+                    setLanguage(item)
+                  }
+                  className={`
+                    shrink-0
+                    rounded-lg
+
+                    ${
+                      active
+                        ? `
+                          bg-sky-50
+                          text-sky-700
+
+                          dark:bg-sky-950/50
+                          dark:text-sky-400
+                        `
+                        : `
+                          text-slate-600
+                          hover:bg-slate-100
+
+                          dark:text-slate-400
+                          dark:hover:bg-[#10213d]
+                        `
+                    }
+                  `}
+                >
+                  {getLanguageLabel(item)}
+                </Button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ===================================================
+          OTHER FILTERS
+          =================================================== */}
+
+      <div className="mt-5 flex flex-wrap gap-2">
         {/* Gender */}
-        <div className="flex gap-2 overflow-x-auto">
-          {["Tous", "Femme", "Homme"].map((item) => {
-            const isActive = gender === item;
 
-            return (
-              <Button
-                key={item}
-                type="button"
-                variant={isActive ? "secondary" : "ghost"}
-                onClick={() => setGender(item)}
-                className={`
-                  shrink-0
-                  rounded-lg
+        {[
+          "Tous",
+          "Femme",
+          "Homme",
+        ].map((item) => {
+          const active =
+            gender === item;
 
-                  ${
-                    isActive
-                      ? `
-                        bg-sky-50
-                        text-sky-700
-                        hover:bg-sky-100
-                        hover:text-sky-700
+          return (
+            <Button
+              key={item}
+              type="button"
+              variant={
+                active
+                  ? "secondary"
+                  : "ghost"
+              }
+              onClick={() =>
+                setGender(item)
+              }
+              className={`
+                rounded-lg
 
-                        dark:bg-sky-950/50
-                        dark:text-sky-400
-                        dark:hover:bg-sky-900/60
-                        dark:hover:text-sky-300
-                      `
-                      : `
-                        text-slate-600
-                        hover:bg-slate-100
-                        hover:text-slate-900
+                ${
+                  active
+                    ? `
+                      bg-sky-50
+                      text-sky-700
 
-                        dark:text-slate-400
-                        dark:hover:bg-[#10213d]
-                        dark:hover:text-slate-100
-                      `
-                  }
-                `}
-              >
-                {item}
-              </Button>
-            );
-          })}
-        </div>
+                      dark:bg-sky-950/50
+                      dark:text-sky-400
+                    `
+                    : `
+                      text-slate-600
+                      hover:bg-slate-100
+
+                      dark:text-slate-400
+                      dark:hover:bg-[#10213d]
+                    `
+                }
+              `}
+            >
+              {item}
+            </Button>
+          );
+        })}
+
+        {/* Type */}
+
+        {[
+          "Tous",
+          "FREE",
+          "PREMIUM",
+        ].map((item) => {
+          const active =
+            type === item;
+
+          return (
+            <Button
+              key={item}
+              type="button"
+              variant={
+                active
+                  ? "secondary"
+                  : "ghost"
+              }
+              onClick={() =>
+                setType(item)
+              }
+              className={`
+                rounded-lg
+
+                ${
+                  active
+                    ? `
+                      bg-sky-50
+                      text-sky-700
+
+                      dark:bg-sky-950/50
+                      dark:text-sky-400
+                    `
+                    : `
+                      text-slate-600
+                      hover:bg-slate-100
+
+                      dark:text-slate-400
+                      dark:hover:bg-[#10213d]
+                    `
+                }
+              `}
+            >
+              {item === "Tous"
+                ? "Tous"
+                : item === "FREE"
+                  ? "Gratuit"
+                  : "Premium"}
+            </Button>
+          );
+        })}
 
         {/* Favorites */}
+
         <Button
           type="button"
-          variant={favoritesOnly ? "secondary" : "ghost"}
+          variant={
+            favoritesOnly
+              ? "secondary"
+              : "ghost"
+          }
           onClick={() =>
-            setFavoritesOnly((value) => !value)
+            setFavoritesOnly(
+              (value) => !value,
+            )
           }
           className={`
-            w-fit
             rounded-lg
 
             ${
@@ -324,22 +1064,16 @@ export default function VoicesPage() {
                 ? `
                   bg-sky-50
                   text-sky-700
-                  hover:bg-sky-100
-                  hover:text-sky-700
 
                   dark:bg-sky-950/50
                   dark:text-sky-400
-                  dark:hover:bg-sky-900/60
-                  dark:hover:text-sky-300
                 `
                 : `
                   text-slate-600
                   hover:bg-slate-100
-                  hover:text-slate-900
 
                   dark:text-slate-400
                   dark:hover:bg-[#10213d]
-                  dark:hover:text-slate-100
                 `
             }
           `}
@@ -357,15 +1091,69 @@ export default function VoicesPage() {
         </Button>
       </div>
 
-      {/* =========================================
-          RESULTS COUNT
-          ========================================= */}
+      {/* ===================================================
+          PREVIEW ERROR
+          =================================================== */}
+
+      {previewError && (
+        <div
+          className="
+            mt-5
+            rounded-xl
+            border
+            border-red-200
+            bg-red-50
+            px-4
+            py-3
+            text-sm
+            text-red-600
+
+            dark:border-red-900/50
+            dark:bg-red-950/20
+            dark:text-red-400
+          "
+        >
+          <div className="flex items-start gap-3">
+            <AudioLines className="mt-0.5 size-4 shrink-0" />
+
+            <div className="flex-1">
+              <p className="font-medium">
+                Erreur de lecture
+              </p>
+
+              <p className="mt-1">
+                {previewError}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() =>
+                setPreviewError(null)
+              }
+              className="
+                text-xs
+                font-medium
+                underline
+              "
+            >
+              Fermer
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ===================================================
+          RESULT COUNT
+          =================================================== */}
+
       <div className="mt-7 flex items-center justify-between">
         <p
           className="
             text-sm
             font-medium
             text-slate-600
+
             dark:text-slate-400
           "
         >
@@ -374,302 +1162,38 @@ export default function VoicesPage() {
             ? "voix"
             : "voix"}
         </p>
+
+        {(search ||
+          language !== "Toutes" ||
+          gender !== "Tous" ||
+          provider !== "Tous" ||
+          type !== "Tous" ||
+          favoritesOnly) && (
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={resetFilters}
+            className="
+              rounded-lg
+              text-xs
+              text-slate-500
+
+              dark:text-slate-400
+            "
+          >
+            Réinitialiser
+          </Button>
+        )}
       </div>
 
-      {/* =========================================
-          VOICE GRID
-          ========================================= */}
-      {filteredVoices.length > 0 ? (
-        <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {filteredVoices.map((voice) => {
-            const isSelected =
-              selectedVoice === voice.id;
+      {/* ===================================================
+          EMPTY
+          =================================================== */}
 
-            return (
-              <div
-                key={voice.id}
-                className={`
-                  rounded-2xl
-                  border
-                  p-5
-                  shadow-sm
-                  transition-all
-
-                  ${
-                    isSelected
-                      ? `
-                        border-sky-400
-                        bg-white
-                        ring-2
-                        ring-sky-500/10
-
-                        dark:border-sky-500
-                        dark:bg-[#0b1830]
-                        dark:ring-sky-500/20
-                        dark:shadow-lg
-                        dark:shadow-sky-950/20
-                      `
-                      : `
-                        border-slate-200
-                        bg-white
-                        hover:border-sky-200
-                        hover:shadow-md
-
-                        dark:border-[#1e3354]
-                        dark:bg-[#0b1830]
-                        dark:hover:border-sky-800
-                        dark:hover:shadow-lg
-                        dark:hover:shadow-sky-950/20
-                      `
-                  }
-                `}
-              >
-                {/* =================================
-                    TOP
-                    ================================= */}
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="
-                        flex
-                        size-12
-                        items-center
-                        justify-center
-                        rounded-xl
-                        bg-sky-50
-
-                        dark:bg-sky-950/50
-                        dark:shadow-sm
-                        dark:shadow-sky-950/30
-                      "
-                    >
-                      <AudioLines
-                        className="
-                          size-5
-                          text-sky-600
-                          dark:text-sky-400
-                        "
-                      />
-                    </div>
-
-                    <div>
-                      <h3
-                        className="
-                          font-semibold
-                          text-slate-900
-                          dark:text-slate-100
-                        "
-                      >
-                        {voice.name}
-                      </h3>
-
-                      <p
-                        className="
-                          text-xs
-                          text-slate-500
-                          dark:text-slate-400
-                        "
-                      >
-                        {voice.language} · {voice.gender}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Favorite */}
-                  <button
-                    type="button"
-                    aria-label={
-                      voice.favorite
-                        ? `Retirer ${voice.name} des favoris`
-                        : `Ajouter ${voice.name} aux favoris`
-                    }
-                    className="
-                      rounded-lg
-                      p-2
-                      text-slate-400
-                      transition-colors
-                      hover:bg-slate-50
-                      hover:text-rose-500
-
-                      dark:text-slate-500
-                      dark:hover:bg-[#10213d]
-                      dark:hover:text-rose-400
-                    "
-                  >
-                    <Heart
-                      className="size-4"
-                      fill={
-                        voice.favorite
-                          ? "currentColor"
-                          : "none"
-                      }
-                    />
-                  </button>
-                </div>
-
-                {/* =================================
-                    DESCRIPTION
-                    ================================= */}
-                <p
-                  className="
-                    mt-4
-                    text-sm
-                    leading-6
-                    text-slate-500
-                    dark:text-slate-400
-                  "
-                >
-                  {voice.description}
-                </p>
-
-                {/* =================================
-                    AUDIO PREVIEW
-                    ================================= */}
-                <div
-                  className="
-                    mt-5
-                    flex
-                    items-center
-                    gap-3
-                    rounded-xl
-                    bg-slate-50
-                    p-3
-
-                    dark:border
-                    dark:border-[#1e3354]
-                    dark:bg-[#071a33]
-                  "
-                >
-                  {/* Play */}
-                  <button
-                    type="button"
-                    aria-label={`Écouter ${voice.name}`}
-                    className="
-                      flex
-                      size-9
-                      shrink-0
-                      items-center
-                      justify-center
-                      rounded-full
-                      bg-white
-                      text-sky-600
-                      shadow-sm
-                      transition-all
-                      hover:bg-sky-50
-                      hover:shadow-md
-
-                      dark:bg-sky-950/60
-                      dark:text-sky-400
-                      dark:hover:bg-sky-900/70
-                      dark:hover:text-sky-300
-                    "
-                  >
-                    <Play
-                      className="
-                        ml-0.5
-                        size-4
-                        fill-current
-                      "
-                    />
-                  </button>
-
-                  {/* Waveform */}
-                  <div className="flex flex-1 items-center gap-1">
-                    {Array.from({ length: 24 }).map(
-                      (_, index) => (
-                        <span
-                          key={index}
-                          className="
-                            h-3
-                            w-1
-                            rounded-full
-                            bg-sky-200
-
-                            dark:bg-sky-700/70
-                          "
-                          style={{
-                            height: `${
-                              8 +
-                              ((index * 7) % 15)
-                            }px`,
-                          }}
-                        />
-                      ),
-                    )}
-                  </div>
-
-                  {/* Volume */}
-                  <Volume2
-                    className="
-                      size-4
-                      shrink-0
-                      text-slate-400
-                      dark:text-slate-500
-                    "
-                  />
-                </div>
-
-                {/* =================================
-                    SELECT
-                    ================================= */}
-                <Button
-                  type="button"
-                  onClick={() =>
-                    setSelectedVoice(
-                      isSelected
-                        ? null
-                        : voice.id,
-                    )
-                  }
-                  variant={
-                    isSelected
-                      ? "secondary"
-                      : "default"
-                  }
-                  className={`
-                    mt-4
-                    w-full
-                    rounded-xl
-
-                    ${
-                      isSelected
-                        ? `
-                          bg-sky-950/60
-                          text-sky-400
-                          hover:bg-sky-900/70
-                          hover:text-sky-300
-
-                          dark:bg-sky-950/70
-                          dark:text-sky-300
-                          dark:hover:bg-sky-900/80
-                        `
-                        : `
-                          shadow-sm
-                          shadow-sky-500/10
-                        `
-                    }
-                  `}
-                >
-                  {isSelected ? (
-                    <>
-                      <Check className="mr-2 size-4" />
-                      Voix sélectionnée
-                    </>
-                  ) : (
-                    "Sélectionner"
-                  )}
-                </Button>
-              </div>
-            );
-          })}
-        </div>
-      ) : (
-        /* =========================================
-           EMPTY STATE
-           ========================================= */
+      {filteredVoices.length === 0 ? (
         <div
           className="
-            mt-8
+            mt-5
             flex
             min-h-[400px]
             flex-col
@@ -682,12 +1206,9 @@ export default function VoicesPage() {
             bg-white
             px-6
             text-center
-            shadow-sm
 
             dark:border-[#244166]
             dark:bg-[#0b1830]
-            dark:shadow-lg
-            dark:shadow-blue-950/10
           "
         >
           <div
@@ -700,14 +1221,13 @@ export default function VoicesPage() {
               bg-sky-50
 
               dark:bg-sky-950/50
-              dark:shadow-lg
-              dark:shadow-sky-950/20
             "
           >
             <AudioLines
               className="
                 size-7
                 text-sky-600
+
                 dark:text-sky-400
               "
             />
@@ -719,10 +1239,13 @@ export default function VoicesPage() {
               text-lg
               font-semibold
               text-slate-900
+
               dark:text-slate-100
             "
           >
-            Aucune voix trouvée
+            {voices.length === 0
+              ? "Aucune voix disponible"
+              : "Aucune voix trouvée"}
           </h3>
 
           <p
@@ -732,39 +1255,570 @@ export default function VoicesPage() {
               text-sm
               leading-6
               text-slate-500
+
               dark:text-slate-400
             "
           >
-            Essayez une autre recherche ou modifiez vos filtres.
+            {voices.length === 0
+              ? "Aucune voix active n'est actuellement enregistrée dans la base de données."
+              : "Essayez une autre recherche ou modifiez vos filtres."}
           </p>
 
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => {
-              setSearch("");
-              setLanguage("Toutes");
-              setGender("Tous");
-              setFavoritesOnly(false);
-            }}
-            className="
-              mt-5
-              rounded-xl
-              border-slate-200
-              bg-white
-              text-slate-700
-              hover:bg-slate-50
-              hover:text-slate-900
+          {voices.length > 0 && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={resetFilters}
+              className="
+                mt-5
+                rounded-xl
+              "
+            >
+              Réinitialiser les filtres
+            </Button>
+          )}
+        </div>
+      ) : (
+        /* =================================================
+           GROUPS
+           ================================================= */
 
-              dark:border-[#244166]
-              dark:bg-[#0b1830]
-              dark:text-slate-300
-              dark:hover:bg-[#10213d]
-              dark:hover:text-slate-100
-            "
-          >
-            Réinitialiser les filtres
-          </Button>
+        <div className="mt-5 space-y-10">
+          {groupedVoices.map(
+            ([providerName, providerVoices]) => (
+              <section
+                key={providerName}
+              >
+                {/* =========================================
+                    PROVIDER HEADER
+                    ========================================= */}
+
+                <div
+                  className="
+                    mb-4
+                    flex
+                    items-center
+                    justify-between
+                    gap-4
+                  "
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div
+                      className="
+                        flex
+                        size-10
+                        shrink-0
+                        items-center
+                        justify-center
+                        rounded-xl
+                        bg-sky-50
+
+                        dark:bg-sky-950/50
+                      "
+                    >
+                      <AudioLines
+                        className="
+                          size-5
+                          text-sky-600
+
+                          dark:text-sky-400
+                        "
+                      />
+                    </div>
+
+                    <div className="min-w-0">
+                      <h3
+                        className="
+                          truncate
+                          text-lg
+                          font-semibold
+                          text-slate-900
+
+                          dark:text-slate-100
+                        "
+                      >
+                        {getProviderLabel(
+                          providerName,
+                        )}
+                      </h3>
+
+                      <p
+                        className="
+                          text-xs
+                          text-slate-500
+
+                          dark:text-slate-400
+                        "
+                      >
+                        {
+                          providerVoices.length
+                        }{" "}
+                        {providerVoices.length >
+                        1
+                          ? "voix"
+                          : "voix"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <ChevronDown
+                    className="
+                      size-4
+                      text-slate-400
+
+                      dark:text-slate-500
+                    "
+                  />
+                </div>
+
+                {/* =========================================
+                    VOICES
+                    ========================================= */}
+
+                <div
+                  className="
+                    grid
+                    gap-4
+                    sm:grid-cols-2
+                    xl:grid-cols-3
+                  "
+                >
+                  {providerVoices.map(
+                    (voice) => {
+                      const isFavorite =
+                        favorites.has(
+                          voice.id,
+                        );
+
+                      const isPlaying =
+                        playingVoiceId ===
+                        voice.id;
+
+                      const isSelected =
+                        selectedVoice ===
+                        voice.id;
+
+                      return (
+                        <div
+                          key={voice.id}
+                          className={`
+                            rounded-2xl
+                            border
+                            bg-white
+                            p-5
+                            shadow-sm
+                            transition-all
+
+                            dark:bg-[#0b1830]
+
+                            ${
+                              isSelected
+                                ? `
+                                  border-sky-400
+                                  ring-2
+                                  ring-sky-500/10
+
+                                  dark:border-sky-500
+                                  dark:ring-sky-500/20
+                                `
+                                : `
+                                  border-slate-200
+                                  hover:border-sky-200
+                                  hover:shadow-md
+
+                                  dark:border-[#1e3354]
+                                  dark:hover:border-sky-800
+                                `
+                            }
+                          `}
+                        >
+                          {/* =================================
+                              CARD HEADER
+                              ================================= */}
+
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex min-w-0 items-center gap-3">
+                              <div
+                                className="
+                                  flex
+                                  size-12
+                                  shrink-0
+                                  items-center
+                                  justify-center
+                                  rounded-xl
+                                  bg-sky-50
+
+                                  dark:bg-sky-950/50
+                                "
+                              >
+                                <AudioLines
+                                  className="
+                                    size-5
+                                    text-sky-600
+
+                                    dark:text-sky-400
+                                  "
+                                />
+                              </div>
+
+                              <div className="min-w-0">
+                                <h4
+                                  className="
+                                    truncate
+                                    font-semibold
+                                    text-slate-900
+
+                                    dark:text-slate-100
+                                  "
+                                >
+                                  {voice.name}
+                                </h4>
+
+                                <p
+                                  className="
+                                    mt-0.5
+                                    truncate
+                                    text-xs
+                                    text-slate-500
+
+                                    dark:text-slate-400
+                                  "
+                                >
+                                  {getLanguageLabel(
+                                    voice.language,
+                                  )}
+
+                                  {" · "}
+
+                                  {normalizeGender(
+                                    voice.gender,
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* FAVORITE */}
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                toggleFavorite(
+                                  voice.id,
+                                )
+                              }
+                              aria-label={
+                                isFavorite
+                                  ? `Retirer ${voice.name} des favoris`
+                                  : `Ajouter ${voice.name} aux favoris`
+                              }
+                              className="
+                                shrink-0
+                                rounded-lg
+                                p-2
+                                text-slate-400
+                                transition
+
+                                hover:bg-slate-50
+                                hover:text-rose-500
+
+                                dark:text-slate-500
+                                dark:hover:bg-[#10213d]
+                                dark:hover:text-rose-400
+                              "
+                            >
+                              <Heart
+                                className="size-4"
+                                fill={
+                                  isFavorite
+                                    ? "currentColor"
+                                    : "none"
+                                }
+                              />
+                            </button>
+                          </div>
+
+                          {/* =================================
+                              BADGES
+                              ================================= */}
+
+                          <div className="mt-4 flex flex-wrap gap-2">
+                            <span
+                              className="
+                                rounded-full
+                                bg-sky-50
+                                px-2.5
+                                py-1
+                                text-xs
+                                font-medium
+                                text-sky-700
+
+                                dark:bg-sky-950/50
+                                dark:text-sky-300
+                              "
+                            >
+                              {voice.type ===
+                              "FREE"
+                                ? "Gratuit"
+                                : "Premium"}
+                            </span>
+
+                            <span
+                              className="
+                                rounded-full
+                                bg-slate-100
+                                px-2.5
+                                py-1
+                                text-xs
+                                font-medium
+                                text-slate-600
+
+                                dark:bg-[#10213d]
+                                dark:text-slate-300
+                              "
+                            >
+                              {getLanguageLabel(
+                                voice.language,
+                              )}
+                            </span>
+                          </div>
+
+                          {/* =================================
+                              DESCRIPTION
+                              ================================= */}
+
+                          <p
+                            className="
+                              mt-4
+                              min-h-[48px]
+                              text-sm
+                              leading-6
+                              text-slate-500
+
+                              dark:text-slate-400
+                            "
+                          >
+                            {voice.description ??
+                              "Aucune description disponible."}
+                          </p>
+
+                          {/* =================================
+                              PROVIDER VOICE ID
+                              ================================= */}
+
+                          <p
+                            className="
+                              mt-3
+                              truncate
+                              text-[11px]
+                              text-slate-400
+
+                              dark:text-slate-500
+                            "
+                            title={
+                              voice.providerVoiceId
+                            }
+                          >
+                            ID :{" "}
+                            {
+                              voice.providerVoiceId
+                            }
+                          </p>
+
+                          {/* =================================
+                              AUDIO PREVIEW
+                              ================================= */}
+
+                          <div
+                            className="
+                              mt-5
+                              flex
+                              items-center
+                              gap-3
+                              rounded-xl
+                              bg-slate-50
+                              p-3
+
+                              dark:border
+                              dark:border-[#1e3354]
+                              dark:bg-[#071a33]
+                            "
+                          >
+                            <button
+                              type="button"
+                              onClick={() =>
+                                void handlePreviewVoice(
+                                  voice.id,
+                                )
+                              }
+                              disabled={
+                                playingVoiceId !==
+                                  null &&
+                                !isPlaying
+                              }
+                              aria-label={
+                                isPlaying
+                                  ? `Lecture de ${voice.name}`
+                                  : `Écouter ${voice.name}`
+                              }
+                              className="
+                                flex
+                                size-9
+                                shrink-0
+                                items-center
+                                justify-center
+                                rounded-full
+                                bg-white
+                                text-sky-600
+                                shadow-sm
+                                transition
+
+                                hover:bg-sky-50
+
+                                disabled:cursor-not-allowed
+                                disabled:opacity-60
+
+                                dark:bg-[#10213d]
+                                dark:text-sky-400
+                                dark:hover:bg-[#153052]
+                              "
+                            >
+                              {isPlaying ? (
+                                <span
+                                  className="
+                                    size-4
+                                    animate-spin
+                                    rounded-full
+                                    border-2
+                                    border-sky-200
+                                    border-t-sky-600
+
+                                    dark:border-sky-900
+                                    dark:border-t-sky-400
+                                  "
+                                />
+                              ) : (
+                                <Play
+                                  className="
+                                    ml-0.5
+                                    size-4
+                                    fill-current
+                                  "
+                                />
+                              )}
+                            </button>
+
+                            {/* WAVEFORM */}
+
+                            <div className="flex flex-1 items-center gap-1">
+                              {Array.from({
+                                length: 24,
+                              }).map(
+                                (_, index) => (
+                                  <span
+                                    key={
+                                      index
+                                    }
+                                    className={`
+                                      w-1
+                                      rounded-full
+                                      transition-all
+
+                                      ${
+                                        isPlaying
+                                          ? `
+                                            bg-sky-500
+                                            animate-pulse
+                                          `
+                                          : `
+                                            bg-sky-200
+
+                                            dark:bg-sky-700/70
+                                          `
+                                      }
+                                    `}
+                                    style={{
+                                      height: `${
+                                        8 +
+                                        ((index *
+                                          7) %
+                                          15)
+                                      }px`,
+                                      animationDelay: `${index * 40}ms`,
+                                    }}
+                                  />
+                                ),
+                              )}
+                            </div>
+
+                            <Volume2
+                              className="
+                                size-4
+                                shrink-0
+                                text-slate-400
+
+                                dark:text-slate-500
+                              "
+                            />
+                          </div>
+
+                          {/* =================================
+                              SELECT
+                              ================================= */}
+
+                          <Button
+                            type="button"
+                            onClick={() =>
+                              setSelectedVoice(
+                                isSelected
+                                  ? null
+                                  : voice.id,
+                              )
+                            }
+                            variant={
+                              isSelected
+                                ? "secondary"
+                                : "default"
+                            }
+                            className={`
+                              mt-4
+                              w-full
+                              rounded-xl
+
+                              ${
+                                isSelected
+                                  ? `
+                                    bg-sky-100
+                                    text-sky-700
+                                    hover:bg-sky-200
+
+                                    dark:bg-sky-950/70
+                                    dark:text-sky-300
+                                    dark:hover:bg-sky-900
+                                  `
+                                  : `
+                                    shadow-sm
+                                    shadow-sky-500/10
+                                  `
+                              }
+                            `}
+                          >
+                            {isSelected ? (
+                              <>
+                                <Check className="mr-2 size-4" />
+                                Voix sélectionnée
+                              </>
+                            ) : (
+                              "Sélectionner"
+                            )}
+                          </Button>
+                        </div>
+                      );
+                    },
+                  )}
+                </div>
+              </section>
+            ),
+          )}
         </div>
       )}
     </div>

@@ -13,6 +13,7 @@ export class VoiceMapper {
       language: voice.language,
       gender: voice.gender,
       description: voice.description,
+      previewUrl: voice.previewUrl,
       isActive: voice.isActive,
       createdAt: voice.createdAt,
       updatedAt: voice.updatedAt,

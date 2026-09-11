@@ -2,10 +2,23 @@ import type { Project } from "@prisma/client";
 import type { ProjectDto } from "../dtos/project.dto";
 import type { CreateProjectInput } from "../types/project.types";
 
+type ProjectWithCounts = Project & {
+  documents?: Array<{
+    _count: {
+      generations: number;
+    };
+    generations?: Array<{
+      duration: number | null;
+    }>;
+  }>;
+};
+
 // La classe ProjectMapper est responsable de la transformation des entités de projet en objets de transfert de données (DTOs) et vice versa. Elle fournit des méthodes pour convertir un projet en DTO, convertir une liste de projets en liste de DTOs, et créer une entité de projet à partir des données d'entrée fournies par l'utilisateur.
 export class ProjectMapper {
   // La méthode toDto prend un projet en entrée et retourne un objet ProjectDto correspondant. Elle mappe les propriétés du projet vers les propriétés du DTO, en s'assurant que les valeurs sont correctement formatées.
-  static toDto(project: Project): ProjectDto {
+  static toDto(project: ProjectWithCounts): ProjectDto {
+    const documents = project.documents ?? [];
+
     return {
       id: project.id,
       name: project.name,
@@ -13,6 +26,21 @@ export class ProjectMapper {
       isFavorite: project.isFavorite,
       isArchived: project.isArchived,
       createdAt: project.createdAt,
+      updatedAt: project.updatedAt,
+      documentCount: documents.length,
+      generationCount: documents.reduce(
+        (total, document) => total + document._count.generations,
+        0,
+      ),
+      audioDuration: documents.reduce(
+        (total, document) =>
+          total + (document.generations ?? []).reduce(
+            (documentTotal, generation) =>
+              documentTotal + (generation.duration ?? 0),
+            0,
+          ),
+        0,
+      ),
     };
   }
   // La méthode toDtoList prend une liste de projets en entrée et retourne une liste d'objets ProjectDto correspondants. Elle utilise la méthode toDto pour convertir chaque projet individuel en DTO.

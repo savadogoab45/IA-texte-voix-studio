@@ -1,3 +1,6 @@
+
+/*
+
 import { createTRPCRouter } from "@/server/api/trpc";
 import { protectedProcedure, publicProcedure } from "@/server/api/trpc";
 
@@ -13,6 +16,7 @@ import { DeleteProjectSchema } from "../validators/delete-project.validator";
 import { GetProjectSchema } from "../validators/get-project.validator";
 import { RestoreProjectSchema } from "@/server/generation/validators/restore-project.validator";
 import { RestoreProjectService } from "../services/restore.project.service";
+import { HardDeleteProjectService } from "../services/hard-delete-project.service";
 
 // Le routeur projectRouter est responsable de gérer les requêtes liées aux projets. Il utilise le schéma de validation CreateProjectSchema pour valider les entrées des utilisateurs et appelle le service CreateProjectService pour créer un nouveau projet.
 
@@ -44,7 +48,7 @@ export const projectRouter = createTRPCRouter({
         input,
       );
     }),
-  */
+  
 
   // La procédure getAll est une requête protégée qui permet à un utilisateur authentifié de récupérer la liste complète de ses projets. Elle utilise le service GetProjectsService pour obtenir tous les projets associés à l'utilisateur.
   getAll: protectedProcedure.query(async ({ ctx }) => {
@@ -63,6 +67,11 @@ export const projectRouter = createTRPCRouter({
       const service = new GetProjectService(repository);
       return service.execute(ctx.session.user.id, input.projectId);
     }),
+
+  getDeleted: protectedProcedure.query(async ({ ctx }) => {
+    const repository = new ProjectRepository();
+    return repository.findDeletedByUserId(ctx.session.user.id);
+  }),
     
   // La procédure update est une mutation protégée qui permet à un utilisateur authentifié de mettre à jour les informations d'un projet spécifique. Elle prend en entrée les données du projet à mettre à jour, valide ces données à l'aide de CreateProjectSchema, et utilise le service UpdateProjectService pour effectuer la mise à jour dans la base de données.
   update: protectedProcedure
@@ -84,6 +93,16 @@ export const projectRouter = createTRPCRouter({
       return service.execute(ctx.session.user.id, input.projectId);
     }),
 
+  hardDelete: protectedProcedure
+    .input(DeleteProjectSchema)
+    .mutation(async ({ ctx, input }) => {
+      const service = new HardDeleteProjectService(
+        new ProjectRepository(),
+      );
+
+      return service.execute(ctx.session.user.id, input.projectId);
+    }),
+
     restore: protectedProcedure
   .input(RestoreProjectSchema)
   .mutation(async ({ ctx, input }) => {
@@ -96,4 +115,171 @@ export const projectRouter = createTRPCRouter({
       input.projectId,
     );
   }),
+});
+*/
+
+import {
+  createTRPCRouter,
+  protectedProcedure,
+} from "@/server/api/trpc";
+
+import { ProjectRepository } from "../repositories/project.repository";
+
+import { CreateProjectService } from "../services/create-project.service";
+import { GetProjectsService } from "../services/get-projects.service";
+import { GetProjectService } from "../services/get-project.service";
+import { UpdateProjectService } from "../services/update-project.service";
+import { DeleteProjectService } from "../services/delete-project.service";
+import { RestoreProjectService } from "../services/restore.project.service";
+import { HardDeleteProjectService } from "../services/hard-delete-project.service";
+
+import { CreateProjectSchema } from "../validators/create-project.validator";
+import { UpdateProjectSchema } from "../validators/update-project.validator";
+import { DeleteProjectSchema } from "../validators/delete-project.validator";
+import { GetProjectSchema } from "../validators/get-project.validator";
+import { RestoreProjectSchema } from "../validators/restore-project.validator";
+
+export const projectRouter = createTRPCRouter({
+  // =========================================================
+  // CREATE
+  // =========================================================
+
+  create: protectedProcedure
+    .input(CreateProjectSchema)
+    .mutation(async ({ ctx, input }) => {
+      const repository = new ProjectRepository();
+
+      const service = new CreateProjectService(
+        repository,
+      );
+
+      return service.execute(
+        ctx.session.user.id,
+        input,
+      );
+    }),
+
+  // =========================================================
+  // GET ALL ACTIVE PROJECTS
+  // =========================================================
+
+  getAll: protectedProcedure.query(async ({ ctx }) => {
+    const repository = new ProjectRepository();
+
+    const service = new GetProjectsService(
+      repository,
+    );
+
+    return service.execute(
+      ctx.session.user.id,
+    );
+  }),
+
+  // =========================================================
+  // GET ONE ACTIVE PROJECT
+  // =========================================================
+
+  get: protectedProcedure
+    .input(GetProjectSchema)
+    .query(async ({ ctx, input }) => {
+      const repository = new ProjectRepository();
+
+      const service = new GetProjectService(
+        repository,
+      );
+
+      return service.execute(
+        ctx.session.user.id,
+        input.projectId,
+      );
+    }),
+
+  // =========================================================
+  // GET DELETED PROJECTS
+  // =========================================================
+
+  getDeleted: protectedProcedure.query(async ({ ctx }) => {
+    const repository = new ProjectRepository();
+
+    return repository.findDeletedByUserId(
+      ctx.session.user.id,
+    );
+  }),
+
+  // =========================================================
+  // UPDATE
+  // =========================================================
+
+  update: protectedProcedure
+    .input(UpdateProjectSchema)
+    .mutation(async ({ ctx, input }) => {
+      const repository = new ProjectRepository();
+
+      const service = new UpdateProjectService(
+        repository,
+      );
+
+      return service.execute(
+        ctx.session.user.id,
+        input.projectId,
+        input,
+      );
+    }),
+
+  // =========================================================
+  // SOFT DELETE
+  // =========================================================
+
+  delete: protectedProcedure
+    .input(DeleteProjectSchema)
+    .mutation(async ({ ctx, input }) => {
+      const repository = new ProjectRepository();
+
+      const service = new DeleteProjectService(
+        repository,
+      );
+
+      return service.execute(
+        ctx.session.user.id,
+        input.projectId,
+      );
+    }),
+
+  // =========================================================
+  // RESTORE
+  // =========================================================
+
+  restore: protectedProcedure
+    .input(RestoreProjectSchema)
+    .mutation(async ({ ctx, input }) => {
+      const repository = new ProjectRepository();
+
+      const service = new RestoreProjectService(
+        repository,
+      );
+
+      return service.execute(
+        ctx.session.user.id,
+        input.id,
+      );
+    }),
+
+  // =========================================================
+  // HARD DELETE
+  // =========================================================
+
+  hardDelete: protectedProcedure
+    .input(DeleteProjectSchema)
+    .mutation(async ({ ctx, input }) => {
+      const repository = new ProjectRepository();
+
+      const service = new HardDeleteProjectService(
+        repository,
+      );
+
+      return service.execute(
+        ctx.session.user.id,
+        input.projectId,
+      );
+    }),
 });

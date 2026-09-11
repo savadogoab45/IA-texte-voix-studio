@@ -9,6 +9,7 @@ import {
   Settings,
   Sparkles,
   User,
+  Trash,
 } from "lucide-react";
 
 import {
@@ -190,7 +191,6 @@ export function SidebarUser({
                 rounded-lg
                 bg-sky-100
                 text-sky-700
-
                 dark:bg-sky-950/60
                 dark:text-sky-300
               "
@@ -274,12 +274,9 @@ export function SidebarUser({
             cursor-pointer
             gap-3
             rounded-lg
-
             text-slate-700
-
             hover:bg-slate-50
             focus:bg-slate-50
-
             dark:text-slate-300
             dark:hover:bg-[#10213d]
             dark:focus:bg-[#10213d]
@@ -299,12 +296,9 @@ export function SidebarUser({
             cursor-pointer
             gap-3
             rounded-lg
-
             text-slate-700
-
             hover:bg-slate-50
             focus:bg-slate-50
-
             dark:text-slate-300
             dark:hover:bg-[#10213d]
             dark:focus:bg-[#10213d]
@@ -324,12 +318,9 @@ export function SidebarUser({
             cursor-pointer
             gap-3
             rounded-lg
-
             text-slate-700
-
             hover:bg-slate-50
             focus:bg-slate-50
-
             dark:text-slate-300
             dark:hover:bg-[#10213d]
             dark:focus:bg-[#10213d]
@@ -349,8 +340,26 @@ export function SidebarUser({
             cursor-pointer
             gap-3
             rounded-lg
+          text-slate-700
+          hover:bg-slate-50
+          focus:bg-slate-50
+          dark:text-slate-300
+          dark:hover:bg-[#10213d]
+          dark:focus:bg-[#10213d]
+          dark:focus:text-slate-100
+            "
+          >
+            <Bell className="size-4" />
+            <span>Notifications</span>
+          </DropdownMenuItem>
 
-            text-slate-700
+          <DropdownMenuItem
+          className="
+            cursor-pointer
+            gap-3
+            rounded-lg
+
+          text-slate-700
 
             hover:bg-slate-50
             focus:bg-slate-50
@@ -360,10 +369,14 @@ export function SidebarUser({
             dark:focus:bg-[#10213d]
             dark:focus:text-slate-100
           "
+          onClick={() =>
+            router.push("/dashboard/trash")
+          }
         >
-          <Bell className="size-4" />
-          <span>Notifications</span>
+          <Trash className="size-4" />
+          <span>Corbeille</span>
         </DropdownMenuItem>
+
 
         <DropdownMenuSeparator
           className="

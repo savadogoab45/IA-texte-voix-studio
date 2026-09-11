@@ -18,6 +18,8 @@ export interface VoiceDto {
 
   description: string | null;
 
+  previewUrl: string | null;
+
   isActive: boolean;
 
   createdAt: Date;

@@ -97,11 +97,30 @@ function DropdownMenuItem({
   className,
   inset,
   variant = "default",
+  asChild = false,
+  children,
   ...props
 }: MenuPrimitive.Item.Props & {
   inset?: boolean
   variant?: "default" | "ghost" | "destructive"
+  asChild?: boolean
 }) {
+  if (asChild && React.isValidElement(children)) {
+    return (
+      <MenuPrimitive.Item
+        data-slot="dropdown-menu-item"
+        data-inset={inset}
+        data-variant={variant}
+        className={cn(
+          "group/dropdown-menu-item relative flex cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-inset:pl-7 data-[variant=success]:text-emerald-600 data-[variant=success]:focus:bg-emerald-50 data-[variant=success]:focus:text-emerald-700 dark:data-[variant=success]:text-emerald-400 dark:data-[variant=success]:focus:bg-emerald-950/40 data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive dark:data-[variant=destructive]:focus:bg-destructive/20 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 data-[variant=destructive]:*:[svg]:text-destructive data-[variant=success]:*:[svg]:text-emerald-600 dark:data-[variant=success]:*:[svg]:text-emerald-400",
+          className
+        )}
+        render={children}
+        {...props}
+      />
+    )
+  }
+
   return (
     <MenuPrimitive.Item
       data-slot="dropdown-menu-item"
@@ -112,7 +131,9 @@ function DropdownMenuItem({
         className
       )}
       {...props}
-    />
+    >
+      {children}
+    </MenuPrimitive.Item>
   )
 }
 

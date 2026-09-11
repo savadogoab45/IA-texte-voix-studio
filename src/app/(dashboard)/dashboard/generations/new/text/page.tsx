@@ -155,7 +155,7 @@ export default function NewTextGenerationPage() {
       voiceId,
       title: title.trim(),
       prompt: prompt.trim(),
-      provider: "OPENAI",
+      providerVoice: "OPENAI",
     });
   }
 
@@ -535,8 +535,9 @@ export default function NewTextGenerationPage() {
             rows={8}
             disabled={isSubmitting}
             className="
+              h-36
               w-full
-              resize-y
+              resize-none
               rounded-xl
               border
               border-slate-200

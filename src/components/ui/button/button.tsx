@@ -4,6 +4,8 @@ import { cn } from "@/lib/cn";
 import { buttonVariants } from "./button.styles";
 import type { ButtonProps } from "./button.types";
 
+export { buttonVariants };
+
 export function Button({
   className,
   children,

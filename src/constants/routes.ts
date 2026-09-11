@@ -7,4 +7,9 @@ export const ROUTES = {
   DASHBOARD: "/dashboard",
   PROFILE: "/profile",
   SETTINGS: "/settings",
+  DASHBOARD_ANALYTICS: "/dashboard/analytics",
+  DASHBOARD_BILLING: "/dashboard/billing",
+  DASHBOARD_HISTORY: "/dashboard/history",
 } as const;
+
+export const routes = ROUTES;

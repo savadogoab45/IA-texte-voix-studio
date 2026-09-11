@@ -8,6 +8,7 @@ export class DocumentMapper {
       title: document.title,
       content: document.content,
       projectId: document.projectId,
+      type: document.type,
       createdAt: document.createdAt,
       updatedAt: document.updatedAt,
     };

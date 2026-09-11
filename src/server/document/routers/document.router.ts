@@ -11,6 +11,7 @@ import { GetDocumentByIdService } from "../services/get-document-by-id.service";
 import { UpdateDocumentService } from "../services/update-document.service";
 import { DeleteDocumentService } from "../services/delete-document.service";
 import { RestoreDocumentService } from "../services/restore-document.service";
+import { HardDeleteDocumentService } from "../services/hard-delete-document.service";
 
 import { CreateDocumentSchema } from "../validators/create-document.validator";
 import { GetAllDocumentsSchema } from "../validators/get-all-document.validator";
@@ -96,6 +97,11 @@ export const documentRouter = createTRPCRouter({
       return service.execute(ctx.session.user.id, input.documentId);
     }),
 
+  getDeleted: protectedProcedure.query(async ({ ctx }) => {
+    const documentRepository = new DocumentRepository();
+    return documentRepository.findDeletedByUserId(ctx.session.user.id);
+  }),
+
   update: protectedProcedure
     .input(UpdateDocumentSchema)
     .mutation(async ({ ctx, input }) => {
@@ -121,6 +127,17 @@ export const documentRouter = createTRPCRouter({
       const service = new DeleteDocumentService(
         documentRepository,
         projectRepository,
+      );
+
+      return service.execute(ctx.session.user.id, input.documentId);
+    }),
+
+  hardDelete: protectedProcedure
+    .input(DeleteDocumentSchema)
+    .mutation(async ({ ctx, input }) => {
+      const service = new HardDeleteDocumentService(
+        new DocumentRepository(),
+        new ProjectRepository(),
       );
 
       return service.execute(ctx.session.user.id, input.documentId);

@@ -6,4 +6,8 @@ export interface ProjectDto {
   isFavorite: boolean;
   isArchived: boolean;
   createdAt: Date;
+  updatedAt: Date;
+  documentCount: number;
+  generationCount: number;
+  audioDuration: number;
 }
