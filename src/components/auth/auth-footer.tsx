@@ -12,11 +12,11 @@ export function AuthFooter({
   linkText,
 }: Readonly<AuthFooterProps>) {
   return (
-    <p className="mt-6 text-center text-sm text-muted-foreground">
+    <p className="mt-6 text-center text-sm text-[#6b82a8] dark:text-blue-100">
       {question}{" "}
       <Link
         href={href}
-        className="font-medium text-primary hover:underline"
+        className="font-bold text-blue-600 hover:underline dark:text-cyan-300"
       >
         {linkText}
       </Link>

@@ -86,7 +86,6 @@ export function Sidebar({
           duration-300
           ease-in-out
           lg:flex
-
           dark:border-[#1e3354]
           dark:bg-[#0b1830]
         `,
@@ -106,7 +105,6 @@ export function Sidebar({
             items-center
             border-b
             border-slate-200
-
             dark:border-[#1e3354]
           `,
           collapsed
@@ -116,7 +114,7 @@ export function Sidebar({
       >
         {!collapsed ? (
           <Link
-            href="/dashboard"
+            href="/"
             className="
               flex
               min-w-0
@@ -133,13 +131,15 @@ export function Sidebar({
                 justify-center
                 rounded-xl
                 bg-gradient-to-br
-                from-sky-500
-                to-cyan-500
+                from-cyan-400
+                via-blue-600
+                to-violet-600
                 text-white
                 shadow-sm
               "
             >
-              <Sparkles className="size-5" />
+              <AudioLines className="size-5" />
+              
             </div>
 
             <div className="flex min-w-0 flex-col">
@@ -149,28 +149,20 @@ export function Sidebar({
                   text-sm
                   font-bold
                   text-slate-900
-
                   dark:text-slate-100
                 "
               >
                 AI Text Audio
               </span>
 
-              <span
-                className="
-                  text-xs
-                  text-slate-500
-
-                  dark:text-slate-400
-                "
-              >
-                SaaS
+              <span className="text-bold text-blue-600 dark:text-cyan-400">
+                Studio
               </span>
             </div>
           </Link>
         ) : (
           <Link
-            href="/dashboard"
+            href="/"
             title="AI Text Audio"
             className="
               flex
@@ -178,10 +170,7 @@ export function Sidebar({
               items-center
               justify-center
               rounded-xl
-              bg-gradient-to-br
-              from-sky-500
-              to-cyan-500
-              text-white
+              bg-gradient-to-br from-cyan-400 via-blue-600 to-violet-600 text-white
               shadow-sm
             "
           >
@@ -353,7 +342,6 @@ export function Sidebar({
             shrink-0
             border-t
             border-slate-200
-
             dark:border-[#1e3354]
           `,
           collapsed

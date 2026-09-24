@@ -32,3 +32,12 @@ export class GetAllDocumentsService {
     return documents.map((document) => DocumentMapper.toDto(document));
   }
 }
+
+export class GetAllUserDocumentsService {
+  constructor(private readonly documentRepository: DocumentRepository) {}
+
+  async execute(userId: string) {
+    const documents = await this.documentRepository.findByUserId(userId);
+    return documents.map((document) => DocumentMapper.toDto(document));
+  }
+}

@@ -87,7 +87,7 @@ export default function ProjectsPage() {
         error,
       );
     },
-  });
+});
 
   // =========================================================
   // SEARCH

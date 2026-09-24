@@ -1,83 +1,74 @@
 import {
+  AudioLines,
   BrainCircuit,
-  Brain,
+  Globe2,
   Mic,
   Cloud,
 } from "lucide-react";
+import Image from "next/image";
 
-{/*import { DashboardPreview } from "./dashboard-preview";*/ }
 import { Feature } from "./feature";
 import { Stat } from "./stat";
 
 export function AuthShowcase() {
   return (
-    <section className="relative hidden h-full overflow-hidden bg-gradient-to-br from-sky-700 via-cyan-600 to-emerald-500 lg:flex">
-      {/* Halo */}
-      <div className="absolute -left-32 top-12 h-72 w-72 rounded-full bg-white/15 blur-3xl" />
+    <section className="relative hidden min-h-screen overflow-hidden lg:flex">
+      <Image
+        src="/images/ai-audio-hero-ligth.png"
+        alt=""
+        fill
+        priority
+        className="object-cover dark:hidden"
+      />
+      <Image
+        src="/images/ai-audio-hero-dark.png"
+        alt=""
+        fill
+        priority
+        className="hidden object-cover dark:block"
+      />
+      <div className="absolute inset-0 bg-linear-to-b from-white/20 via-white/0 to-white/35 dark:from-[#020817]/20 dark:via-[#020817]/5 dark:to-[#020817]/45" />
+      <div className="absolute inset-x-0 bottom-0 h-56 bg-linear-to-t from-white/85 to-transparent dark:from-[#031024]/90" />
 
-      <div className="absolute bottom-0 right-0 h-80 w-80 rounded-full bg-cyan-300/20 blur-3xl" />
-
-      {/* Grid */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.08)_1px,transparent_1px)] bg-[size:40px_40px]" />
-
-      <div className="relative z-10 flex h-full w-full flex-col justify-between px-12 py-10">
-        {/* Header */}
-        <div>
-          <div className="inline-flex items-center gap-3 rounded-full border border-white/20 bg-white/10 px-5 py-3 backdrop-blur">
-            <BrainCircuit className="size-6 text-white" />
-
-            <span className="font-semibold text-white">
-              AI Text Audio
-            </span>
-          </div>
-
-          <h1
-            className="mt-8 max-w-xl text-4xl font-bold leading-tight xl:text-5xl text-white"
-          >
-            Générez du texte avec l&apos;IA puis transformez-le en audio en quelques secondes.
-          </h1>
-
-          <p className="mt-5 max-w-lg text-lg text-cyan-50">
-            Une plateforme complète permettant de créer,
-            convertir et gérer tous vos contenus IA depuis
-            une seule interface.
-          </p>
+      <div className="relative z-10 flex h-full min-h-screen w-full flex-col justify-between px-9 py-8 xl:px-12">
+        <div className="flex items-center gap-2.5">
+          <AudioLines className="h-7 w-7 text-blue-600 dark:text-cyan-300" />
+          <span className="text-lg font-extrabold text-[#0b2b66] dark:text-white">
+            AI Text Audio Studio
+          </span>
         </div>
-        {/* Dashboard 
-          <div className="mt-8">
-            <DashboardPreview />
-          </div>
-          */}
 
-        <div className="mt-8 flex flex-col gap-4 lg:gap-8">
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="mt-auto">
+          <div className="grid grid-cols-4 gap-4">
             <Feature
-              icon={<Brain />}
+              icon={<BrainCircuit />}
               title="Génération IA"
-              description="Créez du contenu de qualité instantanément."
+              description="Création de contenu intelligente"
             />
 
             <Feature
               icon={<Mic />}
               title="Voix naturelles"
-              description="Convertissez vos textes avec des voix réalistes."
+              description="Des voix réalistes et expressives"
+            />
+
+            <Feature
+              icon={<Globe2 />}
+              title="Multilingue"
+              description="Plusieurs langues et voix disponibles"
             />
 
             <Feature
               icon={<Cloud />}
-              title="Synchronisation Cloud"
-              description="Retrouvez vos projets partout."
+              title="Cloud"
+              description="Vos projets accessibles partout"
             />
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            
-            <Stat icon={<BrainCircuit />} number="50K+" label="Textes" />
-
-            <Stat icon={<Mic />} number="18K+" label="Audios" />
-
-            <Stat icon={<Cloud />} number="99.9%" label="Disponibilité" />
-
+          <div className="mt-6 grid grid-cols-3 border-t border-blue-200/80 pt-4 dark:border-cyan-300/25">
+            <Stat number="50K+" label="Textes générés" />
+            <Stat number="18K+" label="Audios créés" />
+            <Stat number="99.9%" label="Disponibilité" />
           </div>
         </div>
       </div>

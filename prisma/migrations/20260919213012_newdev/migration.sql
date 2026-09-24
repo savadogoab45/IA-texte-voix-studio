@@ -2,10 +2,28 @@
 CREATE TYPE "Theme" AS ENUM ('LIGHT', 'DARK', 'SYSTEM');
 
 -- CreateEnum
+CREATE TYPE "DocumentType" AS ENUM ('TEXT', 'AUDIO');
+
+-- CreateEnum
+CREATE TYPE "GenerationStatus" AS ENUM ('PENDING', 'RUNNING', 'COMPLETED', 'FAILED');
+
+-- CreateEnum
+CREATE TYPE "AIProviderType" AS ENUM ('OPENAI', 'GEMINI', 'ANTHROPIC');
+
+-- CreateEnum
 CREATE TYPE "Language" AS ENUM ('FR', 'EN');
 
 -- CreateEnum
+CREATE TYPE "VoiceType" AS ENUM ('FREE', 'PREMIUM');
+
+-- CreateEnum
+CREATE TYPE "VoiceProviderType" AS ENUM ('MICROSOFT', 'GOOGLE', 'PIPER', 'OPENAI', 'ELEVENLABS', 'MINIMAX', 'EDGE_TTS');
+
+-- CreateEnum
 CREATE TYPE "UserStatus" AS ENUM ('ACTIVE', 'SUSPENDED');
+
+-- CreateEnum
+CREATE TYPE "StorageProviderType" AS ENUM ('LOCAL', 'S3', 'R2', 'SUPABASE');
 
 -- CreateTable
 CREATE TABLE "user" (
@@ -94,15 +112,73 @@ CREATE TABLE "verification" (
 );
 
 -- CreateTable
-CREATE TABLE "document" (
+CREATE TABLE "Document" (
     "id" TEXT NOT NULL,
     "title" TEXT NOT NULL,
     "content" TEXT,
+    "type" "DocumentType" NOT NULL DEFAULT 'TEXT',
+    "fileUrl" TEXT,
+    "mimeType" TEXT,
+    "projectId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
-    "projectId" TEXT NOT NULL,
+    "deletedAt" TIMESTAMP(3),
 
-    CONSTRAINT "document_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "Document_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Generation" (
+    "id" TEXT NOT NULL,
+    "prompt" TEXT NOT NULL,
+    "result" TEXT,
+    "providerAi" "AIProviderType",
+    "providerVoice" "VoiceProviderType",
+    "status" "GenerationStatus" NOT NULL,
+    "voiceId" TEXT,
+    "audioUrl" TEXT,
+    "duration" INTEGER,
+    "title" TEXT NOT NULL,
+    "progress" INTEGER NOT NULL DEFAULT 0,
+    "currentStep" TEXT,
+    "transcript" TEXT,
+    "error" TEXT,
+    "documentId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "deletedAt" TIMESTAMP(3),
+    "previewUrl" TEXT,
+
+    CONSTRAINT "Generation_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Voice" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "provider" "VoiceProviderType" NOT NULL,
+    "providerVoiceId" TEXT NOT NULL,
+    "type" "VoiceType" NOT NULL,
+    "language" TEXT NOT NULL,
+    "gender" TEXT,
+    "description" TEXT,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "previewUrl" TEXT,
+    "deletedAt" TIMESTAMP(3),
+
+    CONSTRAINT "Voice_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "UserVoiceFavorite" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "voiceId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "UserVoiceFavorite_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -129,6 +205,9 @@ CREATE INDEX "account_userId_idx" ON "account"("userId");
 -- CreateIndex
 CREATE INDEX "verification_identifier_idx" ON "verification"("identifier");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "UserVoiceFavorite_userId_voiceId_key" ON "UserVoiceFavorite"("userId", "voiceId");
+
 -- AddForeignKey
 ALTER TABLE "user_settings" ADD CONSTRAINT "user_settings_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -142,4 +221,10 @@ ALTER TABLE "session" ADD CONSTRAINT "session_userId_fkey" FOREIGN KEY ("userId"
 ALTER TABLE "account" ADD CONSTRAINT "account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "document" ADD CONSTRAINT "document_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "project"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Document" ADD CONSTRAINT "Document_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "project"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Generation" ADD CONSTRAINT "Generation_voiceId_fkey" FOREIGN KEY ("voiceId") REFERENCES "Voice"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Generation" ADD CONSTRAINT "Generation_documentId_fkey" FOREIGN KEY ("documentId") REFERENCES "Document"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

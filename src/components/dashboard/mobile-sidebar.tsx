@@ -88,38 +88,23 @@ export function MobileSidebar({
       >
         {/* Header */}
         <div className="flex h-16 items-center justify-between border-b border-slate-200 px-4 dark:border-[#1e3354]">
+          
           <Link
             href="/dashboard"
             onClick={onClose}
-            className="flex items-center gap-3"
+            className="flex min-w-0 items-center gap-2.5"
           >
-            <div
-              className="
-                flex
-                size-9
-                items-center
-                justify-center
-                rounded-xl
-                bg-gradient-to-br
-                from-sky-500
-                to-cyan-500
-                text-white
-              "
-            >
-              <Sparkles className="size-5" />
-            </div>
-
-            <div>
-              <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                AI Text Audio
-              </p>
-
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                SaaS
-              </p>
-            </div>
+            <span className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-cyan-400 via-blue-600 to-violet-600 text-white">
+              <AudioLines className="h-5 w-5" />
+            </span>
+            <span className="truncate text-[15px] font-extrabold">
+              AI Text Audio{" "}
+              <span className="text-blue-600 dark:text-cyan-400">
+                Studio
+              </span>
+            </span>
           </Link>
-
+          
           <button
             type="button"
             onClick={onClose}
@@ -153,7 +138,8 @@ export function MobileSidebar({
               const isActive =
                 item.href === "/dashboard"
                   ? pathname === "/dashboard"
-                  : pathname.startsWith(item.href);
+                  : pathname === item.href ||
+                    pathname.startsWith(`${item.href}/`);
 
               return (
                 <Link

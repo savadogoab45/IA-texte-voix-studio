@@ -2,7 +2,7 @@ import { db } from "@/server/db";
 
 export class DocumentRepository {
   // =========================================================
-  // Find by id 
+  // Find by id
   // =========================================================
 
   async findById(id: string) {
@@ -48,7 +48,21 @@ export class DocumentRepository {
       orderBy: {
         createdAt: "desc",
       },
-      
+    });
+  }
+
+  async findByUserId(userId: string) {
+    return db.document.findMany({
+      where: {
+        deletedAt: null,
+        project: {
+          userId,
+          deletedAt: null,
+        },
+      },
+      orderBy: {
+        updatedAt: "desc",
+      },
     });
   }
 
@@ -96,10 +110,7 @@ export class DocumentRepository {
   // FIND BY DOCUMENT + PROJECT
   // =========================================================
 
-  async findByIdAndProjectId(
-    id: string,
-    projectId: string,
-  ) {
+  async findByIdAndProjectId(id: string, projectId: string) {
     return db.document.findFirst({
       where: {
         id,
@@ -112,7 +123,6 @@ export class DocumentRepository {
       },
     });
   }
-
   // =========================================================
   // FIND DELETED BY USER
   // =========================================================
@@ -253,10 +263,7 @@ export class DocumentRepository {
   // CHECK DUPLICATE TITLE
   // =========================================================
 
-  async findByProjectIdAndTitle(
-    projectId: string,
-    title: string,
-  ) {
+  async findByProjectIdAndTitle(projectId: string, title: string) {
     return db.document.findFirst({
       where: {
         projectId,
@@ -285,6 +292,25 @@ export class DocumentRepository {
         },
 
         deletedAt: null,
+      },
+    });
+  }
+
+  async createImported(
+    projectId: string,
+    data: {
+      title: string;
+      content: string;
+      mimeType: string;
+    },
+  ) {
+    return db.document.create({
+      data: {
+        projectId,
+        title: data.title,
+        content: data.content,
+        type: "TEXT",
+        mimeType: data.mimeType,
       },
     });
   }

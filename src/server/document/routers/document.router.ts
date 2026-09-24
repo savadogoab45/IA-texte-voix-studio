@@ -6,7 +6,10 @@ import {
 import { ProjectRepository } from "@/server/project/repositories/project.repository";
 import { DocumentRepository } from "../repositories/document.repository";
 import { CreateDocumentService } from "../services/create-document.service";
-import { GetAllDocumentsService } from "../services/get-all-documents.service";
+import {
+  GetAllDocumentsService,
+  GetAllUserDocumentsService,
+} from "../services/get-all-documents.service";
 import { GetDocumentByIdService } from "../services/get-document-by-id.service";
 import { UpdateDocumentService } from "../services/update-document.service";
 import { DeleteDocumentService } from "../services/delete-document.service";
@@ -65,6 +68,11 @@ export const documentRouter = createTRPCRouter({
 
       return service.execute(ctx.session.user.id, input.projectId);
     }),
+
+  getAllByUser: protectedProcedure.query(async ({ ctx }) => {
+    const service = new GetAllUserDocumentsService(new DocumentRepository());
+    return service.execute(ctx.session.user.id);
+  }),
 
   getAllTest: publicProcedure
     .input(GetAllDocumentsSchema)

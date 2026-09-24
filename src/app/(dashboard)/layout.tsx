@@ -1,16 +1,41 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { MobileSidebar } from "@/components/dashboard/mobile-sidebar";
 import { Navbar } from "@/components/dashboard/navbar";
+
+const navigation = [
+  { label: "Tableau de bord", href: "/dashboard" },
+  { label: "Générations", href: "/dashboard/generations" },
+  { label: "Projets", href: "/dashboard/projects" },
+  { label: "Voix", href: "/dashboard/voices" },
+  { label: "Documents", href: "/dashboard/documents" },
+  { label: "Paramètres", href: "/dashboard/settings" },
+  { label: "Facturation", href: "/dashboard/billing" },
+];
 
 export default function DashboardLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const pathname = usePathname();
+
+  const currentTitle =
+    navigation.find((item) => {
+      if (item.href === "/dashboard") {
+        return pathname === item.href;
+      }
+
+      return (
+        pathname === item.href ||
+        pathname.startsWith(`${item.href}/`)
+      );
+    })?.label ?? "Tableau de bord";
+
   const [sidebarCollapsed, setSidebarCollapsed] =
     useState(false);
 
@@ -74,6 +99,7 @@ export default function DashboardLayout({
       `}
     >
       <Navbar
+        title={currentTitle}
         onMenuClick={() => setMobileSidebarOpen(true)}
       />
 

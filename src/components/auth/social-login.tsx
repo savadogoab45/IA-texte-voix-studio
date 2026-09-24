@@ -1,32 +1,70 @@
 "use client";
 
-
 import { Button } from "@/components/ui/button";
 
 export function SocialLogin() {
-    return (
-        <div className="mt-2">
-            <div className="mb-4 flex items-center gap-4">
-                <div className="h-px flex-1 bg-slate-200" />
+  return (
+    <div className="mt-3">
+      <div className="mb-4 flex items-center gap-3">
+        <div className="h-px flex-1 bg-blue-100 dark:bg-cyan-300/20" />
 
-                <span className="text-sm text-slate-500">
-                    Ou continuer avec
-                </span>
+        <span className="text-sm text-[#7b91b5] dark:text-blue-100">
+          Ou continuer avec
+        </span>
 
-                <div className="h-px flex-1 bg-slate-200" />
-            </div>
+        <div className="h-px flex-1 bg-blue-100 dark:bg-cyan-300/20" />
+      </div>
 
-            <Button
-                type="button"
-                variant="outline"
-                className="h-10 w-full rounded-xl cursor-pointer "
-            >
-                <svg xmlns="http://www.w3.org/2000/svg" className="mr-2 size-5" width="24" height="24"
-                    fill="currentColor" viewBox="0 0 24 24" >
-                    <path d="M10.742 2.04c-1.404.183-3.06.808-4.281 1.626-1.01.664-2.397 2.02-2.309 2.251.193.501 3.28 5.658 3.33 5.562.038-.067.095-.279.123-.49.25-1.385 1.425-2.704 2.897-3.253.568-.221.683-.221 5.495-.27l4.917-.047-.395-.646c-1.385-2.26-3.522-3.819-6.197-4.512-.731-.193-2.81-.318-3.58-.22z" /><path d="M3.2 7.217c-.453.799-.983 2.415-1.107 3.358-.588 4.273 1.568 8.4 5.379 10.315.894.452 2.174.885 2.732.933l.356.029 1.674-2.838c.915-1.559 1.655-2.849 1.636-2.868s-.231.039-.481.125c-1.569.53-3.387.086-4.57-1.116-.424-.424-1.002-1.357-2.84-4.542C4.71 8.41 3.642 6.601 3.603 6.601c-.028 0-.211.279-.403.616" /><path d="M15.15 8.804c1.222 1.242 1.655 3.003 1.116 4.59-.086.26-1.212 2.271-2.501 4.485-1.29 2.203-2.349 4.031-2.349 4.06 0 .115 1.328.057 2.175-.087 4.32-.74 7.573-4.002 8.265-8.276.26-1.558.164-2.925-.307-4.503l-.25-.837h-6.707z" /><path d="M10.608 8.563q-1.515.634-2.078 2.147c-.173.453-.202.713-.173 1.424.03.75.068.963.347 1.511.366.75.962 1.329 1.751 1.703.462.221.654.25 1.54.25.895 0 1.077-.029 1.559-.26.712-.326 1.462-1.077 1.79-1.79.23-.48.259-.663.259-1.558 0-.886-.029-1.078-.25-1.54-.375-.788-.952-1.386-1.703-1.75-.568-.28-.742-.318-1.56-.348-.788-.019-.99.01-1.48.212z" />
-                </svg>
-                Continuer avec Google
-            </Button>
-        </div>
-    );
+      <div className="grid grid-cols-2 gap-3">
+        <Button
+          type="button"
+          variant="outline"
+          className="h-11 cursor-pointer rounded-xl border-blue-100 bg-white/55 font-bold text-[#244373] shadow-none hover:bg-blue-50 dark:border-cyan-300/20 dark:bg-[#0a244f]/60 dark:text-white dark:hover:bg-[#102c66]"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="mr-2 size-5"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+          >
+            <path
+              fill="#4285F4"
+              d="M21.6 12.23c0-.78-.07-1.53-.2-2.23H12v4.22h5.38a4.6 4.6 0 0 1-2 3.02v2.51h3.24c1.9-1.75 2.98-4.33 2.98-7.52z"
+            />
+            <path
+              fill="#34A853"
+              d="M12 22c2.7 0 4.96-.9 6.62-2.43l-3.24-2.51c-.9.6-2.05.96-3.38.96-2.6 0-4.8-1.76-5.59-4.12H3.07v2.59A10 10 0 0 0 12 22z"
+            />
+            <path
+              fill="#FBBC05"
+              d="M6.41 13.9A6.01 6.01 0 0 1 6.1 12c0-.66.11-1.3.31-1.9V7.51H3.07A10 10 0 0 0 2 12c0 1.61.39 3.14 1.07 4.49l3.34-2.59z"
+            />
+            <path
+              fill="#EA4335"
+              d="M12 5.98c1.47 0 2.79.51 3.83 1.5l2.86-2.86C16.96 3.01 14.7 2 12 2a10 10 0 0 0-8.93 5.51l3.34 2.59C7.2 7.74 9.4 5.98 12 5.98z"
+            />
+          </svg>
+          Google
+        </Button>
+
+        <Button
+          type="button"
+          variant="outline"
+          className="h-11 cursor-pointer rounded-xl border-blue-100 bg-white/55 font-bold text-[#244373] shadow-none hover:bg-blue-50 dark:border-cyan-300/20 dark:bg-[#0a244f]/60 dark:text-white dark:hover:bg-[#102c66]"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="mr-2 size-5"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.2-3.37-1.2-.45-1.15-1.1-1.46-1.1-1.46-.9-.61.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.89 1.52 2.34 1.08 2.9.83.09-.64.35-1.08.64-1.33-2.22-.25-4.56-1.11-4.56-4.95 0-1.09.39-1.99 1.03-2.69-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.03A9.56 9.56 0 0 1 12 6.98c.85 0 1.7.11 2.5.34 1.9-1.3 2.74-1.03 2.74-1.03.55 1.38.2 2.4.1 2.65.64.7 1.03 1.6 1.03 2.69 0 3.85-2.34 4.69-4.57 4.94.36.31.68.92.68 1.86v2.58c0 .26.18.58.69.48A10 10 0 0 0 12 2Z" />
+          </svg>
+          GitHub
+        </Button>
+      </div>
+    </div>
+  );
 }

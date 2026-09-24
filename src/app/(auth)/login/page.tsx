@@ -7,8 +7,8 @@ export default function LoginPage() {
   return (
     <AuthCard>
       <AuthHeader
-        title="Connexion"
-        description="Connectez-vous à votre espace."
+        title="Bienvenue !"
+        description="Connectez-vous à votre compte pour accéder à votre studio de création audio."
       />
 
       <LoginForm />

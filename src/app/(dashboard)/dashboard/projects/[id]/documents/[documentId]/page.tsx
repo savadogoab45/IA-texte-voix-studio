@@ -365,7 +365,7 @@ const estimatedMinutes =
   // =========================================
 
   return (
-    <div className="min-h-full bg-[#f7f9ff] text-slate-950 dark:bg-[#061225] dark:text-white">
+    <div className="min-h-full  text-slate-950 dark:bg-[#061225] dark:text-white">
       <div className="mx-auto w-full max-w-[1440px] px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
         <div className="mb-5">
           <Link href={`/dashboard/projects/${projectId}`} className="mb-4 inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-semibold text-slate-500 hover:bg-white hover:text-blue-600 dark:text-slate-400 dark:hover:bg-[#0b1830] dark:hover:text-blue-300">

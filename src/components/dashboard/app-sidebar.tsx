@@ -84,23 +84,11 @@ export function AppSidebar() {
     <ShadcnSidebar collapsible="icon">
       {/* Logo */}
       <SidebarHeader className="border-b border-slate-200">
-        <Link
-          href="/dashboard"
-          className="flex h-12 items-center gap-3 px-2"
-        >
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-cyan-500 text-white shadow-sm">
-            <Sparkles className="size-5" />
-          </div>
-
-          <div className="flex min-w-0 flex-col group-data-[collapsible=icon]:hidden">
-            <span className="truncate text-sm font-bold text-slate-900">
-              AI Text Audio
+        <Link href="/" className="flex items-center gap-2.5">
+            <span className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-cyan-400 via-blue-600 to-violet-600 text-white">
+              <AudioLines className="h-5 w-5" />
             </span>
-
-            <span className="text-xs text-slate-500">
-              SaaS
-            </span>
-          </div>
+            <span className="text-[15px] font-extrabold">AI Text Audio <span className="text-blue-600 dark:text-cyan-400">Studio</span></span>
         </Link>
       </SidebarHeader>
 

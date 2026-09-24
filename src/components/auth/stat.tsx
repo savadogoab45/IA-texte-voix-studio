@@ -1,59 +1,30 @@
-import type { ReactNode } from "react";
-
 interface StatProps {
-  icon: ReactNode;
   number: string;
   label: string;
 }
 
 export function Stat({
-  icon,
   number,
   label,
 }: Readonly<StatProps>) {
   return (
     <div
       className="
-        flex
-        items-center
-        gap-4
-        rounded-2xl
-        border
-        border-white/20
-        bg-white/10
-        p-4
-        backdrop-blur-xl
-        transition-all
-        duration-300
-        hover:-translate-y-1
-        hover:bg-white/15
-        hover:shadow-2xl
+        border-blue-200/80
+        px-3
+        text-center
+        first:border-r
+        last:border-l
+        dark:border-cyan-300/20
       "
     >
-      <div
-        className="
-          flex
-          h-12
-          w-12
-          shrink-0
-          items-center
-          justify-center
-          rounded-xl
-          bg-white/15
-          text-white
-        ">
-        {icon}
-      </div>
+      <h3 className="bg-linear-to-r from-sky-500 via-blue-600 to-violet-600 bg-clip-text text-2xl font-black text-transparent dark:from-cyan-300 dark:via-blue-400 dark:to-fuchsia-400">
+        {number}
+      </h3>
 
-      <div>
-        <h3 className="text-xl font-bold text-white">
-          {number}
-        </h3>
-
-        <p className="text-sm text-cyan-100">
-          {label}
-        </p>
-      </div>
+      <p className="mt-1 text-xs font-medium text-[#42608f] dark:text-cyan-100">
+        {label}
+      </p>
     </div>
   );
 }

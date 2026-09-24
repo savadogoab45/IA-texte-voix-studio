@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
@@ -13,6 +13,8 @@ import {
   Clock3,
   FileAudio,
   FileText,
+  FileUp,
+  FileType2,
   FolderOpen,
   Headphones,
   Loader2,
@@ -27,6 +29,7 @@ import {
   Users,
   X,
   XCircle,
+  Import,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -68,6 +71,10 @@ export default function ProjectDetailsPage() {
 
   const [search, setSearch] = useState("");
   const [generationModalOpen, setGenerationModalOpen] = useState(false);
+  const [documentImportModalOpen, setDocumentImportModalOpen] = useState(false);
+  const [selectedImportFile, setSelectedImportFile] = useState<File | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [isImportingDocument, setIsImportingDocument] = useState(false);
   const [generationSource, setGenerationSource] = useState<
     "document" | "audio"
   >("document");
@@ -204,6 +211,114 @@ export default function ProjectDetailsPage() {
     } catch (error) {
       console.error("Erreur lors de la suppression :", error);
     }
+  }
+
+  const supportedDocumentExtensions = [".pdf", ".docx", ".txt"];
+
+  function openDocumentImportModal() {
+    setSelectedImportFile(null);
+    setImportError(null);
+    setDocumentImportModalOpen(true);
+  }
+
+  function closeDocumentImportModal() {
+    if (isImportingDocument) return;
+    setDocumentImportModalOpen(false);
+    setSelectedImportFile(null);
+    setImportError(null);
+  }
+
+  function validateImportFile(file: File) {
+    const extension = `.${file.name.split(".").pop()?.toLowerCase() ?? ""}`;
+
+    if (!supportedDocumentExtensions.includes(extension)) {
+      return "Format non pris en charge. Utilisez un fichier PDF, DOCX ou TXT.";
+    }
+
+    const maxSize = 20 * 1024 * 1024;
+    if (file.size > maxSize) {
+      return "Le fichier est trop volumineux. La taille maximale est de 20 Mo.";
+    }
+
+    return null;
+  }
+
+  function handleImportFile(file: File | undefined) {
+    if (!file) return;
+
+    const error = validateImportFile(file);
+    setImportError(error);
+
+    if (!error) {
+      setSelectedImportFile(file);
+    } else {
+      setSelectedImportFile(null);
+    }
+  }
+
+ async function importSelectedDocument() {
+  if (!selectedImportFile) return;
+
+  try {
+    setIsImportingDocument(true);
+    setImportError(null);
+
+    const formData = new FormData();
+
+    formData.append("file", selectedImportFile);
+    formData.append("projectId", projectId);
+
+    const response = await fetch("/api/documents/import", {
+      method: "POST",
+      body: formData,
+    });
+
+    const payload = (await response.json()) as {
+      success?: boolean;
+      message?: string;
+      document?: {
+        id: string;
+      };
+    };
+
+    if (!response.ok || !payload.success || !payload.document?.id) {
+      throw new Error(
+        payload.message ?? "Impossible d'importer le document.",
+      );
+    }
+
+    // Rafraîchir les données du projet et des documents
+    await Promise.all([
+      utils.document.getAll.invalidate({ projectId }),
+      utils.project.get.invalidate({ projectId }),
+    ]);
+
+    // Fermer le popup
+    setDocumentImportModalOpen(false);
+    setSelectedImportFile(null);
+    setImportError(null);
+
+    // Ouvrir le document nouvellement importé
+    router.push(
+      `/dashboard/projects/${projectId}/documents/${payload.document.id}`,
+    );
+  } catch (error) {
+    console.error("Erreur lors de l'import du document :", error);
+
+    setImportError(
+      error instanceof Error && error.message
+        ? error.message
+        : "Impossible d'importer le document pour le moment. Réessayez.",
+    );
+  } finally {
+    setIsImportingDocument(false);
+  }
+}
+
+  function formatFileSize(bytes: number) {
+    if (bytes < 1024) return `${bytes} o`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
   }
 
   function formatDate(date: Date | string) {
@@ -556,19 +671,51 @@ export default function ProjectDetailsPage() {
                     </p>
                   </div>
 
-                  <Button
-                    asChild
-                    type="button"
-                    variant="outline"
-                    className="rounded-xl border-slate-200 bg-white dark:border-[#244166] dark:bg-[#10213d]"
-                  >
-                    <Link
-                      href={`/dashboard/projects/${project.id}/documents/new`}
+                  <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+                    {/* IMPORT DOCUMENT */}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={openDocumentImportModal}
+                      className="
+      group h-11 w-full rounded-xl
+      border-slate-200 bg-white px-4
+      font-semibold text-slate-700
+      shadow-sm transition-all duration-200
+      hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700
+      hover:shadow-md hover:shadow-sky-500/5
+      sm:w-auto
+      dark:border-[#244166] dark:bg-[#10213d]
+      dark:text-slate-200
+      dark:hover:border-sky-700 dark:hover:bg-sky-950/30
+      dark:hover:text-sky-400
+    "
                     >
-                      <Plus className="mr-2 size-4 text-sky-600" />
-                      Nouveau document
-                    </Link>
-                  </Button>
+                      <FileUp className="mr-2 size-4 text-sky-500 transition-transform duration-200 group-hover:-translate-y-0.5" />
+                      Importer
+                    </Button>
+
+                    {/* NEW DOCUMENT */}
+                    <Button
+                      asChild
+                      className="
+                          group h-11 w-full rounded-xl
+                          border-0 px-4
+                          font-semibold text-white
+                          bg-gradient-to-r from-sky-500 via-blue-500 to-indigo-600
+                          shadow-md shadow-sky-500/20
+                          transition-all duration-200
+                          hover:from-sky-600 hover:via-blue-600 hover:to-indigo-700
+                          hover:shadow-lg hover:shadow-sky-500/25
+                          sm:w-auto
+                        "
+                    >
+                      <Link href={`/dashboard/projects/${project.id}/documents/new`}>
+                        <Plus className="mr-2 size-4 transition-transform duration-200 group-hover:rotate-90" />
+                        Nouveau document
+                      </Link>
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="relative mt-5">
@@ -600,7 +747,7 @@ export default function ProjectDetailsPage() {
                   }
                 />
               ) : (
-                <div className="divide-y divide-slate-100 dark:divide-[#1e3354]">
+                <div className="max-h-[520px] overflow-y-auto overscroll-contain divide-y divide-slate-100 dark:divide-[#1e3354]">
                   {filteredDocuments.map((document) => (
                     <DocumentRow
                       key={document.id}
@@ -671,7 +818,7 @@ export default function ProjectDetailsPage() {
               ) : generations.length === 0 ? (
                 <EmptyGenerations onCreate={() => openGenerationModal()} />
               ) : (
-                <div className="divide-y divide-slate-100 dark:divide-[#1e3354]">
+                <div className="max-h-[620px] overflow-y-auto overscroll-contain divide-y divide-slate-100 dark:divide-[#1e3354]">
                   {generations.map((generation) => {
                     const progress = Math.min(
                       Math.max(generation.progress ?? 0, 0),
@@ -913,6 +1060,171 @@ export default function ProjectDetailsPage() {
         </div>
       </div>
 
+      {/* DOCUMENT IMPORT MODAL */}
+      {documentImportModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              closeDocumentImportModal();
+            }
+          }}
+        >
+          <div className="flex max-h-[90vh] w-full max-w-xl flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl dark:border-[#1e3354] dark:bg-[#0b1830]">
+            <div className="flex items-start justify-between border-b border-slate-100 px-5 py-5 sm:px-6 dark:border-[#1e3354]">
+              <div>
+                <div className="flex items-center gap-3">
+                  <div className="flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 text-white shadow-sm shadow-sky-500/20">
+                    <FileUp className="size-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                      Ajouter un document
+                    </h2>
+                    <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                      Importez directement votre contenu dans ce projet.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                aria-label="Fermer"
+                disabled={isImportingDocument}
+                onClick={closeDocumentImportModal}
+                className="flex size-9 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-[#10213d] dark:hover:text-slate-100"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+
+            <div className="min-h-0 overflow-y-auto p-5 sm:p-6">
+              <label
+                htmlFor="document-import-input"
+                className={`group block cursor-pointer rounded-[24px] border-2 border-dashed p-8 text-center transition ${selectedImportFile
+                    ? "border-sky-400 bg-sky-50/70 dark:border-sky-500 dark:bg-sky-950/20"
+                    : "border-slate-200 bg-slate-50/70 hover:border-sky-300 hover:bg-sky-50/50 dark:border-[#244166] dark:bg-[#071a33] dark:hover:border-sky-700"
+                  }`}
+              >
+                <input
+                  id="document-import-input"
+                  type="file"
+                  accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+                  className="sr-only"
+                  disabled={isImportingDocument}
+                  onChange={(event) => {
+                    handleImportFile(event.target.files?.[0]);
+                    event.currentTarget.value = "";
+                  }}
+                />
+
+                <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-white shadow-sm transition group-hover:scale-105 dark:bg-[#10213d]">
+                  {selectedImportFile ? (
+                    <FileType2 className="size-7 text-sky-500" />
+                  ) : (
+                    <Upload className="size-7 text-sky-500" />
+                  )}
+                </div>
+
+                {selectedImportFile ? (
+                  <>
+                    <p className="mt-4 truncate text-sm font-bold text-slate-900 dark:text-white">
+                      {selectedImportFile.name}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                      {formatFileSize(selectedImportFile.size)} · fichier sélectionné
+                    </p>
+                    <span className="mt-4 inline-flex rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-sky-600 shadow-sm dark:bg-[#10213d] dark:text-sky-400">
+                      Choisir un autre fichier
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <p className="mt-4 text-sm font-bold text-slate-900 dark:text-white">
+                      Glissez votre fichier ici
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                      ou cliquez pour parcourir votre ordinateur
+                    </p>
+                  </>
+                )}
+              </label>
+
+              <div className="mt-4 grid grid-cols-3 gap-2">
+                {[
+                  { label: "PDF", icon: "📄" },
+                  { label: "DOCX", icon: "📘" },
+                  { label: "TXT", icon: "📝" },
+                ].map((format) => (
+                  <div
+                    key={format.label}
+                    className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-600 dark:border-[#244166] dark:bg-[#10213d] dark:text-slate-300"
+                  >
+                    <span>{format.icon}</span>
+                    {format.label}
+                  </div>
+                ))}
+              </div>
+
+              {importError && (
+                <div className="mt-4 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs leading-5 text-red-700 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-400">
+                  <XCircle className="mt-0.5 size-4 shrink-0" />
+                  <span>{importError}</span>
+                </div>
+              )}
+
+              <div className="mt-5 rounded-2xl border border-sky-100 bg-gradient-to-br from-sky-50 to-violet-50 p-4 dark:border-[#244166] dark:from-[#0d2544] dark:to-[#171536]">
+                <div className="flex items-start gap-3">
+                  <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm dark:bg-[#10213d]">
+                    <Sparkles className="size-4 text-sky-500" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-800 dark:text-slate-100">
+                      Prêt pour SonaGen
+                    </p>
+                    <p className="mt-1 text-[11px] leading-5 text-slate-500 dark:text-slate-400">
+                      Le texte importé pourra ensuite être transformé en audio avec vos réglages de voix IA.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col-reverse gap-2 border-t border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-end dark:border-[#1e3354]">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isImportingDocument}
+                className="rounded-xl border-slate-200 dark:border-[#244166]"
+                onClick={closeDocumentImportModal}
+              >
+                Annuler
+              </Button>
+
+              <Button
+                type="button"
+                disabled={!selectedImportFile || isImportingDocument}
+                className="rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 shadow-sm shadow-sky-500/20 hover:from-sky-600 hover:to-indigo-700"
+                onClick={() => void importSelectedDocument()}
+              >
+                {isImportingDocument ? (
+                  <>
+                    <Loader2 className="mr-2 size-4 animate-spin" />
+                    Importation...
+                  </>
+                ) : (
+                  <>
+                    <FileUp className="mr-2 size-4" />
+                    Importer le document
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* DELETE CONFIRMATION */}
       <AlertDialog
         open={confirmation !== null}
@@ -1026,11 +1338,10 @@ export default function ProjectDetailsPage() {
                     setGenerationSource("document");
                     setSelectedGenerationDocumentId(null);
                   }}
-                  className={`flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition ${
-                    generationSource === "document"
+                  className={`flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition ${generationSource === "document"
                       ? "bg-white text-sky-600 shadow-sm dark:bg-[#0b1830] dark:text-sky-400"
                       : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-                  }`}
+                    }`}
                 >
                   <FileText className="size-4" />
                   Document
@@ -1042,11 +1353,10 @@ export default function ProjectDetailsPage() {
                     setGenerationSource("audio");
                     setSelectedGenerationDocumentId(null);
                   }}
-                  className={`flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition ${
-                    generationSource === "audio"
+                  className={`flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition ${generationSource === "audio"
                       ? "bg-white text-sky-600 shadow-sm dark:bg-[#0b1830] dark:text-sky-400"
                       : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-                  }`}
+                    }`}
                 >
                   <FileAudio className="size-4" />
                   Audio
@@ -1081,7 +1391,7 @@ export default function ProjectDetailsPage() {
                       </p>
                     </div>
                   ) : (
-                    <div className="space-y-2">
+                    <div className="max-h-[38vh] space-y-2 overflow-y-auto pr-1">
                       {documents.map((document) => {
                         const selected =
                           selectedGenerationDocumentId === document.id;
@@ -1093,18 +1403,16 @@ export default function ProjectDetailsPage() {
                             onClick={() =>
                               setSelectedGenerationDocumentId(document.id)
                             }
-                            className={`flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition ${
-                              selected
+                            className={`flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition ${selected
                                 ? "border-sky-400 bg-sky-50 shadow-sm dark:border-sky-500 dark:bg-sky-950/20"
                                 : "border-slate-200 hover:border-sky-200 hover:bg-slate-50 dark:border-[#1e3354] dark:hover:bg-[#0e1f38]"
-                            }`}
+                              }`}
                           >
                             <div
-                              className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${
-                                selected
+                              className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${selected
                                   ? "bg-white dark:bg-[#10213d]"
                                   : "bg-sky-50 dark:bg-sky-950/40"
-                              }`}
+                                }`}
                             >
                               <FileText className="size-5 text-sky-600 dark:text-sky-400" />
                             </div>
@@ -1127,21 +1435,36 @@ export default function ProjectDetailsPage() {
                     </div>
                   )}
 
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full rounded-xl border-slate-200 dark:border-[#244166]"
-                    onClick={() => {
-                      router.push(
-                        `/dashboard/projects/${projectId}/documents/new?returnTo=${encodeURIComponent(
-                          `/dashboard/projects/${projectId}/generations/new`,
-                        )}`,
-                      );
-                    }}
-                  >
-                    <Plus className="mr-2 size-4" />
-                    Créer un document
-                  </Button>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full rounded-xl border-slate-200 dark:border-[#244166]"
+                      onClick={() => {
+                        router.push(
+                          `/dashboard/projects/${projectId}/documents/new?returnTo=${encodeURIComponent(
+                            `/dashboard/projects/${projectId}/generations/new`,
+                          )}`,
+                        );
+                      }}
+                    >
+                      <Plus className="mr-2 size-4" />
+                      Créer un document
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full rounded-xl border-sky-200 bg-sky-50/70 text-sky-700 hover:bg-sky-100 dark:border-sky-900/50 dark:bg-sky-950/20 dark:text-sky-400 dark:hover:bg-sky-950/30"
+                      onClick={() => {
+                        setGenerationModalOpen(false);
+                        openDocumentImportModal();
+                      }}
+                    >
+                      <FileUp className="mr-2 size-4" />
+                      Importer un document
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -1445,11 +1768,10 @@ function DocumentRow({
           className="flex min-w-0 flex-1 items-start gap-3"
         >
           <div
-            className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${
-              document.type === "AUDIO"
+            className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${document.type === "AUDIO"
                 ? "bg-violet-50 dark:bg-violet-950/40"
                 : "bg-sky-50 dark:bg-sky-950/40"
-            }`}
+              }`}
           >
             {document.type === "AUDIO" ? (
               <FileAudio className="size-5 text-violet-600 dark:text-violet-400" />

@@ -19,13 +19,13 @@ export function PasswordInput({
       <Input
         {...props}
         type={showPassword ? "text" : "password"}
-        className={cn("h-10 pr-12", className)}
+        className={cn("h-10.5 rounded-lg pr-10", className)}
       />
 
       <button
         type="button"
         onClick={() => setShowPassword((prev) => !prev)}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 transition-colors hover:text-slate-900"
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6a83ad] transition-colors hover:text-blue-600 dark:text-blue-200 dark:hover:text-cyan-300"
       >
         {showPassword ? (
           <EyeOff className="size-5" />
